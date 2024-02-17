@@ -44,27 +44,27 @@ Install-Module -Name PSReadLine -Force -AllowClobber -Scope AllUsers -Confirm:$f
 Write-Host "PowerShellGet and PSReadLine are installed."
 
 # # Install the required packages using Chocolatey
-# Write-Host "Installing packages using Chocolatey..."
-# choco install -y python autohotkey vscode windirstat winfsp nssm brave termius steam notepadplusplus.install gsudo git starship 7zip discord vlc mpv teracopy qbittorrent rclone yt-dlp k-litecodecpackfull revo-uninstaller adb firacode autohotkey nodejs.install curl stremio
-# Write-Host "Packages installation completed."
+Write-Host "Installing packages using Chocolatey..."
+choco install -y python autohotkey vscode windirstat winfsp nssm brave termius steam notepadplusplus.install gsudo git starship 7zip discord vlc mpv teracopy qbittorrent rclone yt-dlp k-litecodecpackfull revo-uninstaller adb firacode autohotkey nodejs.install curl stremio
+Write-Host "Packages installation completed."
 
 # # Install the required packages using winget
-# Write-Host "Installing packages using winget..."
-# winget install --id TonecInc.InternetDownloadManager
-# winget install --id StardockSoftware.Start10
-# winget install --id AppWorkGmbH.JDownloader2
-# winget install --id HeroicGamesLauncher.HeroicGamesLauncher
-# Write-Host "Packages installation completed."
+Write-Host "Installing packages using winget..."
+winget install --id TonecInc.InternetDownloadManager
+winget install --id StardockSoftware.Start10
+winget install --id AppWorkGmbH.JDownloader2
+winget install --id HeroicGamesLauncher.HeroicGamesLauncher
+Write-Host "Packages installation completed."
 
 # Install the required packages from the Windows Store
-# Write-Host "Installing packages from the Windows Store..."
-# winget install --id HewlettPackard.HPCommandCenter
-# winget install --id Microsoft.BatteryPercentageIcon
-# winget install --id Microsoft.WinDynamicDesktop
-# winget install --id WhatsAppWhatsApp
-# winget install --id Viber.Viber
-# winget install --id Unigram.Unigram
-# Write-Host "Packages installation completed."
+Write-Host "Installing packages from the Windows Store..."
+winget install --id HewlettPackard.HPCommandCenter
+winget install --id Microsoft.BatteryPercentageIcon
+winget install --id Microsoft.WinDynamicDesktop
+winget install --id WhatsAppWhatsApp
+winget install --id Viber.Viber
+winget install --id Unigram.Unigram
+Write-Host "Packages installation completed."
 
 
 # Download the PowerShell profile file
@@ -102,3 +102,4 @@ Set-ItemProperty -Path $explorerKeyPath -Name "LaunchTo" -Value 1
 # Disable "Hide extensions for known file types"
 $hideExtensionsKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 Set-ItemProperty -Path $hideExtensionsKeyPath -Name "HideFileExt" -Value 0
+
