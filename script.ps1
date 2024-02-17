@@ -3,7 +3,8 @@ $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIde
 
 # If not running as admin, re-run the script with elevated privileges
 if (-not $isAdmin) {
-   Start-Process powershell.exe -Verb RunAs -ArgumentList "-File $($MyInvocation.MyCommand.Path)"
+   $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`""
+   Start-Process powershell.exe -Verb RunAs -ArgumentList $arguments -Wait
    Exit
 }
 
@@ -23,3 +24,8 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
 else {
    Write-Host "Chocolatey is already installed."
 }
+
+# Wait till the user presses any button
+Write-Host "Press any key to continue..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+
