@@ -5,12 +5,6 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
    exit
 }
 
-# Check if the shell used to execute the script is not PowerShell 7
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-   Write-Host "You need to use PowerShell 7 to execute this script."
-   pause
-   exit
-}
 
 # Set the global execution policy to unrestricted
 Set-ExecutionPolicy Unrestricted -Scope LocalMachine -Force
@@ -37,6 +31,13 @@ else {
    Write-Host "PowerShell 7 is already installed."
 }
 
+# Check if the shell used to execute the script is not PowerShell 7
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+   Write-Host "You need to use PowerShell 7 to execute this script."
+   pause
+   exit
+}
+
 # Install PowerShellGet and PSReadLine
 Write-Host "Installing PowerShellGet and PSReadLine..."
 Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -Confirm:$false 
@@ -54,6 +55,9 @@ winget install --id TonecInc.InternetDownloadManager
 winget install --id StardockSoftware.Start10
 winget install --id AppWorkGmbH.JDownloader2
 winget install --id HeroicGamesLauncher.HeroicGamesLauncher
+winget install --id Bitwarden.Bitwarden
+winget install --id JetBrains.Toolbox
+
 Write-Host "Packages installation completed."
 
 # Install the required packages from the Windows Store
@@ -64,6 +68,7 @@ winget install --id Microsoft.WinDynamicDesktop
 winget install --id WhatsAppWhatsApp
 winget install --id Viber.Viber
 winget install --id Unigram.Unigram
+winget install --id Bluemail.Bluemail
 Write-Host "Packages installation completed."
 
 
@@ -95,6 +100,19 @@ Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shellStartup -Force
 
 Write-Host "shortcut.exe file copied to shell:startup."
 
+# Download the starship.toml file and install it
+$url = "https://github.com/aaxyat/WinndowsSetup/raw/main/ConfigFiles/starship.toml"
+$destDir = "$HOME\.config\starship"
+$destFile = "$destDir\starship.toml"
+
+# Create the directory if it doesn't exist
+if (!(Test-Path -Path $destDir)) {
+   New-Item -ItemType Directory -Force -Path $destDir
+}
+
+# Download the file
+Invoke-WebRequest -Uri $url -OutFile $destFile
+
 # Set the default explorer open folder to "This PC"
 $explorerKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 Set-ItemProperty -Path $explorerKeyPath -Name "LaunchTo" -Value 1
@@ -102,4 +120,10 @@ Set-ItemProperty -Path $explorerKeyPath -Name "LaunchTo" -Value 1
 # Disable "Hide extensions for known file types"
 $hideExtensionsKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 Set-ItemProperty -Path $hideExtensionsKeyPath -Name "HideFileExt" -Value 0
+
+# Install Ubuntu
+wsl --install -d Ubuntu
+
+# Install Kali Linux
+wsl --install -d Kali-linux
 

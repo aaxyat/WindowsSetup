@@ -1,8 +1,14 @@
-# 🛠️ Windows 11 Setup Script Testing Environment 🛠️
+<div align="center">
 
-This repository contains scripts for setting up a Windows 11 environment.
+# 🚀 Windows 11 Setup Script Testing Environment 🚀
 
-## 🚀 Fetching and Executing the Setup Script 🚀
+This repository contains scripts and configuration files for setting up a Windows 11 environment.
+
+</div>
+
+---
+
+## 📡 Fetching and Executing the Setup Script 📡
 
 To fetch and execute the setup script in PowerShell, open PowerShell and run the following command:
 
@@ -12,28 +18,51 @@ iwr -useb l.ayushb.com/setup | iex
 
 This command uses `iwr` (an alias for `Invoke-WebRequest`) to fetch the script from the provided URL and pipes it to `iex` (an alias for `Invoke-Expression`) to execute the fetched script.
 
-## 💻 Development 💻
+## 📂 Configuration Files 📂
 
-### Requirements
+The `ConfigFiles` directory contains various configuration files that are used by the setup script:
 
-- [VirtualBox](https://www.virtualbox.org/) (Optional)
-- [Windows 11 ISO](https://www.microsoft.com/software-download/windows11) (Optional)
+- `Microsoft.PowerShell_profile.ps1`: This is the PowerShell profile file.
+- `settings.json`: This file contains various settings.
+- `shortcuts.ahk` and `shortcuts.exe`: These files are used for setting up keyboard shortcuts.
+- `sshd_config`: This is the configuration file for SSH daemon.
+- `starship.toml`: This is the configuration file for Starship, a customizable prompt for any shell.
 
-### Testing the Setup Script
+# 🎯 Development 🎯
 
-1. Run your setup script.
-2. Test the environment as needed.
+## 🛠️ Requirements 🛠️
 
-## 📈 Stats 📈
+- VirtualBox (Optional)
+- Windows 11 ISO (Optional)
 
-- Scripts written: 1
-- Lines of code: 100 (approximate)
-- Coffee cups consumed: ☕☕☕
+To get a local copy up and running, follow these simple steps:
 
-## 🤝 Contribution 🤝
+1. Clone the repository to your local machine:
 
-Contributions are always welcome! Please read the [contribution guidelines](CONTRIBUTING.md) first.
+   ```sh
+   git clone https://github.com/aaxyat/WinndowsSetup.git
+   ```
 
-## 📜 License 📜
+2. Navigate to the cloned repository:
 
-This project is licensed under the terms of the MIT license.
+   ```sh
+   cd WinndowsSetup
+   ```
+
+## 🧪 Testing the Setup Script 🧪
+
+Run your setup script and test the environment as needed.
+
+## 🤝 Contributing 🤝
+
+Contributions, issues, and feature requests are welcome! Please read `CONTRIBUTING.md` for details on our code of conduct, and the process for submitting pull requests to us.
+
+## 📝 License 📝
+
+This project is licensed under the terms of the MIT license. See the `LICENSE` file for details.
+
+<div align="center">
+
+### Built with ❤️ by [aaxyat](https://github.com/aaxyat)
+
+</div>
