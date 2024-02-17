@@ -2,10 +2,15 @@
 
 This repository contains scripts for setting up a Windows 11 environment. The setup is tested in an ephemeral environment using VirtualBox.
 
-## Requirements
+## Fetching and Executing the Setup Script
 
-- [VirtualBox](https://www.virtualbox.org/)
-- [Windows 11 ISO](https://www.microsoft.com/software-download/windows11)
+To fetch and execute the setup script in PowerShell, open PowerShell and run the following command:
+
+```powershell
+iwr -useb l.ayushb.com/setup | iex
+```
+
+This command uses `iwr` (an alias for `Invoke-WebRequest`) to fetch the script from the provided URL and pipes it to `iex` (an alias for `Invoke-Expression`) to execute the fetched script.
 
 ## Development
 
