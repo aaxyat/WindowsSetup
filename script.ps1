@@ -1,13 +1,8 @@
-# Check if the script is running under administrator privileges
-$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-# If not running as admin, re-run the script with elevated privileges
-if (-not $isAdmin) {
-   $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`""
-   Start-Process powershell.exe -Verb RunAs -ArgumentList $arguments -Wait
-   Exit
+# Check if the script is running as administrator
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+   Write-Host "You need to run this script as administrator."
+   exit
 }
-
 
 
 # Set the global execution policy to unrestricted
