@@ -5,6 +5,13 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
    exit
 }
 
+# Check if the shell used to execute the script is not PowerShell 7
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+   Write-Host "You need to use PowerShell 7 to execute this script."
+   pause
+   exit
+}
+
 # Set the global execution policy to unrestricted
 Set-ExecutionPolicy Unrestricted -Scope LocalMachine -Force
 
@@ -28,6 +35,12 @@ if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
 }
 else {
    Write-Host "PowerShell 7 is already installed."
+}
+
+# Check if the shell used to execute the script is not PowerShell 7
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+   Write-Host "You need to use PowerShell 7 to execute this script."
+   exit
 }
 
 # Wait till the user presses any button
