@@ -37,33 +37,5 @@ else {
    Write-Host "PowerShell 7 is already installed."
 }
 
-# Check if the shell used to execute the script is not PowerShell 7
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-   Write-Host "You need to use PowerShell 7 to execute this script."
-   exit
-}
 
-# Wait till the user presses any button
-Write-Host "Press any key to continue..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-
-
-# Set the global execution policy to unrestricted
-Set-ExecutionPolicy Unrestricted -Scope LocalMachine -Force
-
-
-# Check if Chocolatey is installed
-if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-   # Install Chocolatey
-   Set-ExecutionPolicy Bypass -Scope Process -Force
-   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-   Write-Host "Chocolatey is installed."
-}
-else {
-   Write-Host "Chocolatey is already installed."
-}
-
-# Wait till the user presses any button
-Write-Host "Press any key to continue..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 
