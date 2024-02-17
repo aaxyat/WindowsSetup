@@ -37,5 +37,21 @@ else {
    Write-Host "PowerShell 7 is already installed."
 }
 
+# Install PowerShellGet and PSReadLine
+Write-Host "Installing PowerShellGet and PSReadLine..."
+Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -Confirm:$false -Force
+Install-Module -Name PSReadLine -Force -AllowClobber -Scope AllUsers -Confirm:$false -Force
+Write-Host "PowerShellGet and PSReadLine are installed."
 
+# Install the required packages using Chocolatey
+Write-Host "Installing packages using Chocolatey..."
+choco install -y python autohotkey vscode windirstat winfsp nssm brave termius steam notepadplusplus.install gsudo git starship 7zip discord vlc mpv teracopy qbittorrent rclone yt-dlp k-litecodecpackfull revo-uninstaller adb firacode autohotkey nodejs.install curl stremio
+Write-Host "Packages installation completed."
 
+# Install the required packages using winget
+Write-Host "Installing packages using winget..."
+winget install --id TonecInc.InternetDownloadManager
+winget install --id StardockSoftware.Start10
+winget install --id AppWorkGmbH.JDownloader2
+winget install --id HeroicGamesLauncher.HeroicGamesLauncher
+Write-Host "Packages installation completed."
