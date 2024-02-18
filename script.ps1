@@ -5,6 +5,18 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
    exit
 }
 
+# Define the log file path
+$logDir = "$HOME\Documents\logs"
+$logFile = "$logDir\setup.log"
+
+# Create the logs directory if it doesn't exist
+if (!(Test-Path -Path $logDir)) {
+   New-Item -ItemType Directory -Force -Path $logDir
+}
+
+# Start the transcript
+Start-Transcript -Path $logFile -Append
+
 
 # Set the global execution policy to unrestricted
 Set-ExecutionPolicy Unrestricted -Scope LocalMachine -Force
@@ -129,3 +141,5 @@ wsl --install -d Ubuntu
 # Install Kali Linux
 wsl --install -d Kali-linux
 
+# Stop the transcript at the end of the script
+Stop-Transcript
