@@ -117,7 +117,7 @@ Write-Host "shortcut.exe file copied to shell:startup."
 
 # Download the starship.toml file and install it
 $url = "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/starship.toml"
-$destDir = "$HOME\.config\starship"
+$destDir = "$HOME\.config\"
 $destFile = "$destDir\starship.toml"
 
 # Create the directory if it doesn't exist
