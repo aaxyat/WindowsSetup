@@ -66,10 +66,11 @@ Write-Host "Installing packages using winget..."
 winget install -e --id Tonec.InternetDownloadManager
 winget install -e --id StartIsBack.StartAllBack
 winget install -e --id AppWork.JDownloader
-winget install --id HeroicGamesLauncher.HeroicGamesLauncher
-winget install --id Bitwarden.Bitwarden
-winget install --id JetBrains.Toolbox
-winget install --id pCloud.pCloud
+winget install -e --id HeroicGamesLauncher.HeroicGamesLauncher
+winget install -e --id Bitwarden.Bitwarden
+winget install -e --id Bitwarden.CLI
+winget install -e --id JetBrains.Toolbox
+winget install -e --id pCloudAG.pCloudDrive
 winget install -e --id Cloudflare.Warp
 
 
