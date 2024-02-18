@@ -23,7 +23,7 @@ This command uses `iwr` (an alias for `Invoke-WebRequest`) to fetch the script f
 The `ConfigFiles` directory contains various configuration files that are used by the setup script:
 
 - `Microsoft.PowerShell_profile.ps1`: This is the PowerShell profile file.
-- `settings.json`: This file contains various settings.
+- `settings.json`: This file contains settings for windows terminal.
 - `shortcuts.ahk` and `shortcuts.exe`: These files are used for setting up keyboard shortcuts.
 - `sshd_config`: This is the configuration file for SSH daemon.
 - `starship.toml`: This is the configuration file for Starship, a customizable prompt for any shell.
