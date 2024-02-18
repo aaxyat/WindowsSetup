@@ -58,7 +58,7 @@ Write-Host "PowerShellGet and PSReadLine are installed."
 
 # # Install the required packages using Chocolatey
 Write-Host "Installing packages using Chocolatey..."
-choco install -y python autohotkey vscode windirstat winfsp nssm brave termius steam notepadplusplus.install gsudo git starship 7zip discord vlc mpv teracopy qbittorrent rclone yt-dlp k-litecodecpackfull revo-uninstaller adb firacode autohotkey nodejs.install curl stremio
+choco install -y python autohotkey vscode windirstat winfsp nssm brave termius steam notepadplusplus.install gsudo git starship 7zip discord vlc mpv teracopy qbittorrent rclone yt-dlp k-litecodecpackfull revo-uninstaller adb firacode nodejs.install curl stremio
 Write-Host "Packages installation completed."
 
 # # Install the required packages using winget
