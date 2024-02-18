@@ -88,7 +88,7 @@ Write-Host "Packages installation completed."
 
 
 # Download the PowerShell profile file
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/aaxyat/WinndowsSetup/main/ConfigFiles/Microsoft.PowerShell_profile.ps1" -OutFile $PROFILE
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/ConfigFiles/Microsoft.PowerShell_profile.ps1" -OutFile $PROFILE
 
 # Install the profile into PowerShell 7 profile
 if ($PSVersionTable.PSVersion.Major -ge 7) {
@@ -102,12 +102,12 @@ else {
 }
 
 # Download the Windows Terminal settings file
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/aaxyat/WinndowsSetup/main/ConfigFiles/settings.json" -OutFile "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/ConfigFiles/settings.json" -OutFile "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
 Write-Host "Windows Terminal settings file downloaded and installed."
 
 
 # Download the shortcut.exe file
-Invoke-WebRequest -Uri "https://github.com/aaxyat/WinndowsSetup/raw/main/ConfigFiles/shortcuts.exe" -OutFile "$env:TEMP\shortcut.exe"
+Invoke-WebRequest -Uri "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/shortcuts.exe" -OutFile "$env:TEMP\shortcut.exe"
 
 # Copy the shortcut.exe file to shell:startup
 $shellStartup = [Environment]::GetFolderPath("Startup")
@@ -116,7 +116,7 @@ Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shellStartup -Force
 Write-Host "shortcut.exe file copied to shell:startup."
 
 # Download the starship.toml file and install it
-$url = "https://github.com/aaxyat/WinndowsSetup/raw/main/ConfigFiles/starship.toml"
+$url = "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/starship.toml"
 $destDir = "$HOME\.config\starship"
 $destFile = "$destDir\starship.toml"
 
