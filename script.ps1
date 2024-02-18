@@ -36,7 +36,7 @@ else {
 if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
    # Install PowerShell 7 using winget
    Write-Host "PowerShell 7 is not installed. Installing PowerShell 7..."
-   winget install --accept-package-agreements --id Microsoft.PowerShell -e
+   winget install  --accept-source-agreements --accept-package-agreements --id Microsoft.PowerShell -e
    Write-Host "PowerShell 7 is installed."
 }
 else {
