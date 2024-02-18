@@ -63,28 +63,28 @@ Write-Host "Packages installation completed."
 
 # # Install the required packages using winget
 Write-Host "Installing packages using winget..."
-winget install -e --id Tonec.InternetDownloadManager
-winget install -e --id StartIsBack.StartAllBack
-winget install -e --id AppWork.JDownloader
-winget install -e --id HeroicGamesLauncher.HeroicGamesLauncher
-winget install -e --id Bitwarden.Bitwarden
-winget install -e --id Bitwarden.CLI
-winget install -e --id JetBrains.Toolbox
-winget install -e --id pCloudAG.pCloudDrive
-winget install -e --id Cloudflare.Warp
+winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
+winget install --accept-package-agreements -e --id StartIsBack.StartAllBack
+winget install --accept-package-agreements -e --id AppWork.JDownloader
+winget install --accept-package-agreements -e --id HeroicGamesLauncher.HeroicGamesLauncher
+winget install --accept-package-agreements -e --id Bitwarden.Bitwarden
+winget install --accept-package-agreements -e --id Bitwarden.CLI
+winget install --accept-package-agreements -e --id JetBrains.Toolbox
+winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
+winget install --accept-package-agreements -e --id Cloudflare.Warp
 
 
 Write-Host "Packages installation completed."
 
 # Install the required packages from the Windows Store
 Write-Host "Installing packages from the Windows Store..."
-winget install --id 9P92N00QV14J # HP Command Center
-winget install --id 9PCKT2B7DZMW # Battery Percent icon
-winget install --id 9NM8N7DQ3Z5F # WinDynamicDesktop
-winget install --id 9NKSQGP7F2NH # Whatsapp
-winget install --id XPFM5P5KDWF0JP # Viber
-winget install --id 9N97ZCKPD60Q # Unigram
-winget install --id 9PMHZVM588P4 #Bluemail
+winget install --accept-package-agreements --id  9P92N00QV14J # HP Command Center
+winget install --accept-package-agreements --id  9PCKT2B7DZMW # Battery Percentage icon
+winget install --accept-package-agreements --id 9NM8N7DQ3Z5F # WinDynamicDesktop
+winget install --accept-package-agreements --id 9NKSQGP7F2NH # Whatsapp
+winget install --accept-package-agreements --id XPFM5P5KDWF0JP # Viber
+winget install --accept-package-agreements --id 9N97ZCKPD60Q # Unigram
+winget install --accept-package-agreements --id 9PMHZVM588P4 #Bluemail
 Write-Host "Packages installation completed."
 
 
