@@ -132,6 +132,9 @@ function ias {
 function mas {
         iwr massgrave.dev/get | iex
 }
+function genp {
+        iwr y.gy/toolbox | iex
+}
 function touch($file) {
         "" | Out-File $file -Encoding ASCII
 }
