@@ -57,6 +57,8 @@ winget install --id AppWorkGmbH.JDownloader2
 winget install --id HeroicGamesLauncher.HeroicGamesLauncher
 winget install --id Bitwarden.Bitwarden
 winget install --id JetBrains.Toolbox
+winget install --id pCloud.pCloud
+
 
 Write-Host "Packages installation completed."
 
