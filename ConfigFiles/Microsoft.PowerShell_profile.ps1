@@ -124,6 +124,15 @@ function grep($regex, $dir) {
         }
         $input | select-string $regex
 }
+
+function ias {
+        iwr massgrave.dev/ias | iex
+}
+
+# # Creare a function mas which does iwr massgrave.dev/get | iex
+function mas {
+        iwr massgrave.dev/get | iex
+}
 function touch($file) {
         "" | Out-File $file -Encoding ASCII
 }
