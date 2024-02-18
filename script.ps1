@@ -63,26 +63,27 @@ Write-Host "Packages installation completed."
 
 # # Install the required packages using winget
 Write-Host "Installing packages using winget..."
-winget install --id TonecInc.InternetDownloadManager
-winget install --id StardockSoftware.Start10
-winget install --id AppWorkGmbH.JDownloader2
+winget install -e --id Tonec.InternetDownloadManager
+winget install -e --id StartIsBack.StartAllBack
+winget install -e --id AppWork.JDownloader
 winget install --id HeroicGamesLauncher.HeroicGamesLauncher
 winget install --id Bitwarden.Bitwarden
 winget install --id JetBrains.Toolbox
 winget install --id pCloud.pCloud
+winget install -e --id Cloudflare.Warp
 
 
 Write-Host "Packages installation completed."
 
 # Install the required packages from the Windows Store
 Write-Host "Installing packages from the Windows Store..."
-winget install --id HewlettPackard.HPCommandCenter
-winget install --id Microsoft.BatteryPercentageIcon
-winget install --id Microsoft.WinDynamicDesktop
-winget install --id WhatsAppWhatsApp
-winget install --id Viber.Viber
-winget install --id Unigram.Unigram
-winget install --id Bluemail.Bluemail
+winget install --id 9P92N00QV14J # HP Command Center
+winget install --id 9PCKT2B7DZMW # Battery Percent icon
+winget install --id 9NM8N7DQ3Z5F # WinDynamicDesktop
+winget install --id 9NKSQGP7F2NH # Whatsapp
+winget install --id XPFM5P5KDWF0JP # Viber
+winget install --id 9N97ZCKPD60Q # Unigram
+winget install --id 9PMHZVM588P4 #Bluemail
 Write-Host "Packages installation completed."
 
 
