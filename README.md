@@ -40,13 +40,13 @@ To get a local copy up and running, follow these simple steps:
 1. Clone the repository to your local machine:
 
    ```sh
-   git clone https://github.com/aaxyat/WinndowsSetup.git
+   git clone https://github.com/aaxyat/WindowsSetup.git
    ```
 
 2. Navigate to the cloned repository:
 
    ```sh
-   cd WinndowsSetup
+   cd WindowsSetup
    ```
 
 ## 🧪 Testing the Setup Script 🧪
