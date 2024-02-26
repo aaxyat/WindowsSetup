@@ -9,6 +9,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 $logDir = "$HOME\Documents\logs"
 $logFile = "$logDir\setup.log"
 
+
 # Create the logs directory if it doesn't exist
 if (!(Test-Path -Path $logDir)) {
    New-Item -ItemType Directory -Force -Path $logDir
@@ -71,8 +72,8 @@ winget install --accept-package-agreements -e --id Bitwarden.Bitwarden
 winget install --accept-package-agreements -e --id Bitwarden.CLI
 winget install --accept-package-agreements -e --id JetBrains.Toolbox
 winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
-winget install --accept-package-agreements -e --id Cloudflare.Warp
-
+winget install --accept-package-agreements -e --id WireGuard.WireGuard
+winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
 
 Write-Host "Packages installation completed."
 
@@ -144,6 +145,12 @@ $officeInstallerPath = "$env:TEMP\OfficeInstaller.exe"
 Invoke-WebRequest -Uri $officeUrl -OutFile $officeInstallerPath
 Start-Process -FilePath $officeInstallerPath -Wait
 Write-Host "Office installation completed."
+
+# Create the Github folder if it doesn't exist
+$githubFolder = Join-Path $HOME\Documents "Github"
+if (!(Test-Path -Path $githubFolder)) {
+   New-Item -ItemType Directory -Force -Path $githubFolder
+}
 
 # Install Ubuntu
 wsl --install -d Ubuntu
