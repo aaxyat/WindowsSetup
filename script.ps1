@@ -155,8 +155,6 @@ if (!(Test-Path -Path $githubFolder)) {
 # Install Ubuntu
 wsl --install -d Ubuntu
 
-# Install Kali Linux
-wsl --install -d Kali-linux
 
 # Stop the transcript at the end of the script
 Stop-Transcript
