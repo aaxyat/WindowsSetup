@@ -135,6 +135,9 @@ function mas {
 function genp {
         iwr y.gy/toolbox | iex
 }
+function ctt {
+        iwr -useb https://christitus.com/win | iex
+}
 function touch($file) {
         "" | Out-File $file -Encoding ASCII
 }
