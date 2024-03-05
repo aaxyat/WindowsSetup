@@ -58,8 +58,17 @@ Install-Module -Name PSReadLine -Force -AllowClobber -Scope AllUsers -Confirm:$f
 Write-Host "PowerShellGet and PSReadLine are installed."
 
 # # Install the required packages using Chocolatey
+
+$packages = @("python", "autohotkey", "vscode", "windirstat", "winfsp", "nssm", "brave", "termius", "steam", "notepadplusplus.install", "gsudo", "git", "starship", "7zip", "discord", "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
+$totalPackages = $packages.Count
+
 Write-Host "Installing packages using Chocolatey..."
-choco install -y python autohotkey vscode windirstat winfsp nssm brave termius steam notepadplusplus.install gsudo git starship 7zip discord vlc mpv teracopy qbittorrent rclone yt-dlp k-litecodecpackfull revo-uninstaller adb firacode nodejs.install curl stremio
+
+for ($i = 0; $i -lt $totalPackages; $i++) {
+   Write-Host "Installing package $($i+1)/${totalPackages}: $($packages[$i])"
+   choco install -y $($packages[$i])
+}
+
 Write-Host "Packages installation completed."
 
 # # Install the required packages using winget
