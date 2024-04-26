@@ -82,7 +82,15 @@ winget install --accept-package-agreements -e --id Bitwarden.CLI
 winget install --accept-package-agreements -e --id JetBrains.Toolbox
 winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
 winget install --accept-package-agreements -e --id WireGuard.WireGuard
-winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
+winget install --accept-package-agreements -e --id Mozilla.Firefox
+winget install --accept-package-agreements -e --id GitHub.GitHubDesktop
+winget install --accept-package-agreements -e --id Axosoft.GitKraken
+winget install --accept-package-agreements -e --id TechNobo.TcNoAccountSwitcher
+winget install --accept-package-agreements -e --id hluk.CopyQ
+winget install --accept-package-agreements -e --id spacedrive.Spacedrive
+winget install --accept-package-agreements -e --id wez.wezterm
+
+
 
 Write-Host "Packages installation completed."
 
