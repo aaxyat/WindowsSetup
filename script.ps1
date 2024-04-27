@@ -107,13 +107,14 @@ Write-Host "Packages installation completed."
 
 
 # Download the PowerShell profile file
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/ConfigFiles/Microsoft.PowerShell_profile.ps1" -OutFile $PROFILE
 
 # Install the profile into PowerShell 7 profile
 if ($PSVersionTable.PSVersion.Major -ge 7) {
-   $profilePath = $PROFILE | Split-Path
-   $profilePath7 = Join-Path $profilePath "Microsoft.PowerShell_profile.ps1"
-   Copy-Item -Path $PROFILE -Destination $profilePath7 -Force
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/ConfigFiles/Microsoft.PowerShell_profile.ps1" -OutFile $PROFILE
+
+   # $profilePath = $PROFILE | Split-Path
+   # $profilePath7 = Join-Path $profilePath "Microsoft.PowerShell_profile.ps1"
+   # Copy-Item -Path $PROFILE -Destination $profilePath7 -Force
    Write-Host "PowerShell 7 profile installed."
 }
 else {
