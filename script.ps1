@@ -59,7 +59,7 @@ Write-Host "PowerShellGet and PSReadLine are installed."
 
 # # Install the required packages using Chocolatey
 
-$packages = @("python", "autohotkey", "vscode", "windirstat", "winfsp", "nssm", "brave", "termius", "steam", "notepadplusplus.install", "gsudo", "git", "starship", "7zip", "discord", "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
+$packages = @("python", "autohotkey", "vscode", "windirstat", "winfsp", "nssm", "brave", "termius", "notepadplusplus.install", "gsudo", "git", "starship", "7zip", "discord", "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
 $totalPackages = $packages.Count
 
 Write-Host "Installing packages using Chocolatey..."
@@ -73,13 +73,13 @@ Write-Host "Packages installation completed."
 
 # # Install the required packages using winget
 Write-Host "Installing packages using winget..."
-winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
+# winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
 winget install --accept-package-agreements -e --id StartIsBack.StartAllBack
 winget install --accept-package-agreements -e --id AppWork.JDownloader
 winget install --accept-package-agreements -e --id HeroicGamesLauncher.HeroicGamesLauncher
 winget install --accept-package-agreements -e --id Bitwarden.Bitwarden
 winget install --accept-package-agreements -e --id Bitwarden.CLI
-winget install --accept-package-agreements -e --id JetBrains.Toolbox
+# winget install --accept-package-agreements -e --id JetBrains.Toolbox
 winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
 winget install --accept-package-agreements -e --id WireGuard.WireGuard
 winget install --accept-package-agreements -e --id Mozilla.Firefox
@@ -87,7 +87,8 @@ winget install --accept-package-agreements -e --id GitHub.GitHubDesktop
 winget install --accept-package-agreements -e --id Axosoft.GitKraken
 winget install --accept-package-agreements -e --id TechNobo.TcNoAccountSwitcher
 winget install --accept-package-agreements -e --id hluk.CopyQ
-winget install --accept-package-agreements -e --id spacedrive.Spacedrive
+winget install --accept-package-agreements -e --id Valve.Steam
+# winget install --accept-package-agreements -e --id spacedrive.Spacedrive
 winget install --accept-package-agreements -e --id wez.wezterm
 
 
@@ -96,13 +97,13 @@ Write-Host "Packages installation completed."
 
 # Install the required packages from the Windows Store
 Write-Host "Installing packages from the Windows Store..."
-winget install --accept-package-agreements --id  9P92N00QV14J # HP Command Center
-winget install --accept-package-agreements --id  9PCKT2B7DZMW # Battery Percentage icon
+winget install --accept-package-agreements --id 9P92N00QV14J # HP Command Center
+winget install --accept-package-agreements --id 9PCKT2B7DZMW # Battery Percentage icon
 winget install --accept-package-agreements --id 9NM8N7DQ3Z5F # WinDynamicDesktop
 winget install --accept-package-agreements --id 9NKSQGP7F2NH # Whatsapp
 winget install --accept-package-agreements --id XPFM5P5KDWF0JP # Viber
 winget install --accept-package-agreements --id 9N97ZCKPD60Q # Unigram
-winget install --accept-package-agreements --id 9PMHZVM588P4 #Bluemail
+# winget install --accept-package-agreements --id 9PMHZVM588P4 #Bluemail
 Write-Host "Packages installation completed."
 
 
