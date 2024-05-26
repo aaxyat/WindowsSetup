@@ -130,10 +130,8 @@ function ias {
 }
 
 function mas {
-        iwr massgrave.dev/get | iex
-}
-function genp {
-        iwr y.gy/toolbox | iex
+        irm https://get.activated.win | iex
+
 }
 function ctt {
         iwr -useb https://christitus.com/win | iex
