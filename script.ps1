@@ -103,6 +103,8 @@ winget install --accept-package-agreements --id 9NM8N7DQ3Z5F # WinDynamicDesktop
 winget install --accept-package-agreements --id 9NKSQGP7F2NH # Whatsapp
 winget install --accept-package-agreements --id XPFM5P5KDWF0JP # Viber
 winget install --accept-package-agreements --id 9N97ZCKPD60Q # Unigram
+winget install --accept-package-agreements --id 9ncrcvjc50wl # WinnowMail
+winget install --accept-package-agreements --id 9n0dx20hk701 # Windows Terminal
 # winget install --accept-package-agreements --id 9PMHZVM588P4 #Bluemail
 Write-Host "Packages installation completed."
 
