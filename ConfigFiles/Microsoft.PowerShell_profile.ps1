@@ -86,6 +86,7 @@ function Edit-Profile {
 New-Alias vim nvim
 function ll { Get-ChildItem -Path $pwd -File }
 function g { cd $HOME\Documents\Github }
+function p { cd $HOME\Documents\Projects }
 function gcom {
         git add .
         git commit -m "$args"
@@ -94,6 +95,9 @@ function lazyg {
         git add .
         git commit -m "$args"
         git push
+}
+function npp {
+        start notepad++.exe $args
 }
 Function Get-PubIP {
  (Invoke-WebRequest http://ifconfig.me/ip ).Content
@@ -169,3 +173,6 @@ $ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 if (Test-Path($ChocolateyProfile)) {
         Import-Module "$ChocolateyProfile"
 }
+
+# This Loads Zoxide
+Invoke-Expression (& { (zoxide init powershell | Out-String) })

@@ -59,7 +59,7 @@ Write-Host "PowerShellGet and PSReadLine are installed."
 
 # # Install the required packages using Chocolatey
 
-$packages = @("python", "autohotkey", "vscode", "windirstat", "winfsp", "nssm", "brave", "termius", "notepadplusplus.install", "gsudo", "git", "starship", "7zip", "discord", "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
+$packages = @("fzf", "zoxide", "python", "autohotkey", "vscode", "windirstat", "winfsp", "nssm", "brave", "termius", "notepadplusplus.install", "gsudo", "git", "starship", "7zip", "discord", "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
 $totalPackages = $packages.Count
 
 Write-Host "Installing packages using Chocolatey..."
@@ -103,7 +103,7 @@ winget install --accept-package-agreements --id 9NM8N7DQ3Z5F # WinDynamicDesktop
 winget install --accept-package-agreements --id 9NKSQGP7F2NH # Whatsapp
 winget install --accept-package-agreements --id XPFM5P5KDWF0JP # Viber
 winget install --accept-package-agreements --id 9N97ZCKPD60Q # Unigram
-winget install --accept-package-agreements --id 9ncrcvjc50wl # WinnowMail
+# winget install --accept-package-agreements --id 9ncrcvjc50wl # WinnowMail
 winget install --accept-package-agreements --id 9n0dx20hk701 # Windows Terminal
 # winget install --accept-package-agreements --id 9PMHZVM588P4 #Bluemail
 Write-Host "Packages installation completed."
