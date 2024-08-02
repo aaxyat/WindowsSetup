@@ -37,7 +37,7 @@ else {
 if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
    # Install PowerShell 7 using winget
    Write-Host "PowerShell 7 is not installed. Installing PowerShell 7..."
-   winget install  --accept-source-agreements --accept-package-agreements --id Microsoft.PowerShell -e
+   winget install  --accept-source-agreements --accept-package-agreements -e --id Microsoft.PowerShell 
    Write-Host "PowerShell 7 is installed."
 }
 else {
@@ -59,7 +59,7 @@ Write-Host "PowerShellGet and PSReadLine are installed."
 
 # # Install the required packages using Chocolatey
 
-$packages = @("fzf", "zoxide", "python", "autohotkey", "vscode", "windirstat", "winfsp", "nssm", "brave", "termius", "notepadplusplus.install", "gsudo", "git", "starship", "7zip", "discord", "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
+$packages = @("fzf", "zoxide", "python", "autohotkey", "vscode", "windirstat", "winfsp", "nssm", "termius", "notepadplusplus.install", "gsudo", "git", "starship", "7zip", "discord", "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
 $totalPackages = $packages.Count
 
 Write-Host "Installing packages using Chocolatey..."
@@ -75,7 +75,7 @@ Write-Host "Packages installation completed."
 Write-Host "Installing packages using winget..."
 # winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
 winget install --accept-package-agreements -e --id StartIsBack.StartAllBack
-winget install --accept-package-agreements -e --id AppWork.JDownloader
+# winget install --accept-package-agreements -e --id AppWork.JDownloader
 winget install --accept-package-agreements -e --id HeroicGamesLauncher.HeroicGamesLauncher
 winget install --accept-package-agreements -e --id Bitwarden.Bitwarden
 winget install --accept-package-agreements -e --id Bitwarden.CLI
@@ -85,11 +85,12 @@ winget install --accept-package-agreements -e --id WireGuard.WireGuard
 winget install --accept-package-agreements -e --id Mozilla.Firefox
 winget install --accept-package-agreements -e --id GitHub.GitHubDesktop
 winget install --accept-package-agreements -e --id Axosoft.GitKraken
-winget install --accept-package-agreements -e --id TechNobo.TcNoAccountSwitcher
-winget install --accept-package-agreements -e --id hluk.CopyQ
+# winget install --accept-package-agreements -e --id TechNobo.TcNoAccountSwitcher
+# winget install --accept-package-agreements -e --id hluk.CopyQ
 winget install --accept-package-agreements -e --id Valve.Steam
+winget install --accept-package-agreements -e --id SoftDeluxe.FreeDownloadManager #Free Download Manager
 # winget install --accept-package-agreements -e --id spacedrive.Spacedrive
-winget install --accept-package-agreements -e --id wez.wezterm
+# winget install --accept-package-agreements -e --id wez.wezterm
 
 
 
