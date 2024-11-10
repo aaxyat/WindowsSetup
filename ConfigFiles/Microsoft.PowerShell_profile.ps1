@@ -108,8 +108,10 @@ function uptime {
         }
 }
 function reload-profile {
-        & $profile
+    . $PROFILE
+    Write-Host "Profile reloaded successfully!" -ForegroundColor Green
 }
+
 function find-file($name) {
         ls -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | foreach {
                 $place_path = $_.directory
@@ -129,9 +131,6 @@ function grep($regex, $dir) {
         $input | select-string $regex
 }
 
-function ias {
-        iwr massgrave.dev/ias | iex
-}
 
 function mas {
         irm https://get.activated.win | iex
@@ -140,6 +139,7 @@ function mas {
 function ctt {
         iwr -useb https://christitus.com/win | iex
 }
+
 function touch($file) {
         "" | Out-File $file -Encoding ASCII
 }
@@ -160,6 +160,83 @@ function pkill($name) {
 }
 function pgrep($name) {
         ps $name
+}
+
+# Helper Function
+
+function s {
+    param(
+        [Parameter(Position = 0)]
+        [String] $command
+    )
+
+    $shortcuts = @{
+        'acm'            = @{desc = 'Git add all changes, commit with message and push to remote in one command'; usage = 'acm "commit message"'; color = 'DarkYellow'}
+        'cinst'         = @{desc = 'Install packages using Chocolatey package manager with admin privileges'; usage = 'cinst package-name'; color = 'Blue'}
+        'cd...'         = @{desc = 'Navigate up two directory levels from current location'; usage = 'cd...'; color = 'Green'}
+        'cd....'        = @{desc = 'Navigate up three directory levels from current location'; usage = 'cd....'; color = 'Green'}
+        'md5'           = @{desc = 'Calculate MD5 hash of specified file for verification'; usage = 'md5 filename'; color = 'Magenta'}
+        'sha1'          = @{desc = 'Calculate SHA1 hash of specified file for verification'; usage = 'sha1 filename'; color = 'Magenta'}
+        'sha256'        = @{desc = 'Calculate SHA256 hash of specified file for verification'; usage = 'sha256 filename'; color = 'Magenta'}
+        'n'             = @{desc = 'Quickly open specified file in Windows Notepad'; usage = 'n filename'; color = 'Blue'}
+        'dirs'          = @{desc = 'Recursively list all files and directories with optional pattern matching'; usage = 'dirs [pattern]'; color = 'Yellow'}
+        'admin'         = @{desc = 'Launch new PowerShell session or specific command with admin privileges'; usage = 'admin [command]'; color = 'Red'}
+        'Edit-Profile'  = @{desc = 'Open PowerShell profile in default editor for customization'; usage = 'Edit-Profile'; color = 'Cyan'}
+        'll'            = @{desc = 'List all files in current directory with detailed information'; usage = 'll'; color = 'Green'}
+        'g'             = @{desc = 'Quick navigation to Github projects directory'; usage = 'g'; color = 'DarkYellow'}
+        'p'             = @{desc = 'Quick navigation to Projects directory'; usage = 'p'; color = 'DarkYellow'}
+        'gcom'          = @{desc = 'Stage all changes and create a git commit with specified message'; usage = 'gcom "message"'; color = 'DarkYellow'}
+        'lazyg'         = @{desc = 'Stage, commit all changes and push to remote git repository'; usage = 'lazyg "message"'; color = 'DarkYellow'}
+        'npp'           = @{desc = 'Open specified file in Notepad++ text editor'; usage = 'npp filename'; color = 'Blue'}
+        'Get-PubIP'     = @{desc = 'Display current public IP address of the system'; usage = 'Get-PubIP'; color = 'Cyan'}
+        'uptime'        = @{desc = 'Show system uptime since last boot with timestamp'; usage = 'uptime'; color = 'Cyan'}
+        'reload-profile'= @{desc = 'Reload PowerShell profile to apply recent changes'; usage = 'reload-profile'; color = 'Cyan'}
+        'find-file'     = @{desc = 'Recursively search for files matching specified pattern'; usage = 'find-file name'; color = 'Yellow'}
+        'unzip'         = @{desc = 'Extract contents of specified zip file to current directory'; usage = 'unzip file.zip'; color = 'Blue'}
+        'grep'          = @{desc = 'Search for pattern in files or pipeline input with optional directory'; usage = 'grep pattern [dir]'; color = 'Yellow'}
+        'mas'           = @{desc = 'Run Microsoft Activation Scripts for Windows/Office activation'; usage = 'mas'; color = 'Red'}
+        'ctt'           = @{desc = 'Execute Chris Titus Tech Windows optimization utilities'; usage = 'ctt'; color = 'Magenta'}
+        'touch'         = @{desc = 'Create new empty file or update timestamp of existing file'; usage = 'touch file'; color = 'Blue'}
+        'df'            = @{desc = 'Display information about system disk volumes and space'; usage = 'df'; color = 'Green'}
+        'sed'           = @{desc = 'Find and replace text in specified file with pattern matching'; usage = 'sed file find replace'; color = 'Yellow'}
+        'which'         = @{desc = 'Show full path of specified command or executable'; usage = 'which cmd'; color = 'Cyan'}
+        'export'        = @{desc = 'Set or modify system environment variable with specified value'; usage = 'export name value'; color = 'Magenta'}
+        'pkill'         = @{desc = 'Terminate all processes matching specified name pattern'; usage = 'pkill name'; color = 'Red'}
+        'pgrep'         = @{desc = 'Find and list all processes matching specified name pattern'; usage = 'pgrep name'; color = 'Yellow'}
+        'vim'           = @{desc = 'Open specified file in Neovim text editor (alias for nvim)'; usage = 'vim file'; color = 'Blue'}
+    }
+
+    if ($command) {
+        if ($shortcuts.ContainsKey($command)) {
+            $shortcut = $shortcuts[$command]
+            Write-Host "`n🔍 " -NoNewline
+            Write-Host $command -ForegroundColor Cyan -NoNewline
+            Write-Host " → " -ForegroundColor DarkGray -NoNewline
+            Write-Host $shortcut.desc -ForegroundColor $shortcut.color
+            Write-Host "📎 Usage: " -NoNewline
+            Write-Host $shortcut.usage -ForegroundColor Yellow
+            Write-Host ""
+        }
+        else {
+            Write-Host "`n❌ Unknown command: " -NoNewline
+            Write-Host $command -ForegroundColor Red
+            Write-Host "Type " -NoNewline
+            Write-Host "s" -ForegroundColor Cyan -NoNewline
+            Write-Host " to see all shortcuts`n"
+        }
+    }
+    else {
+        Write-Host "`n⚡ PowerShell Shortcuts ⚡`n" -ForegroundColor Green
+        $shortcuts.GetEnumerator() | Sort-Object Name | ForEach-Object {
+            Write-Host $_.Key.PadRight(15) -ForegroundColor Cyan -NoNewline
+            Write-Host "→ " -ForegroundColor DarkGray -NoNewline
+            Write-Host $_.Value.desc -ForegroundColor $_.Value.color
+        }
+        Write-Host "`n💡 " -NoNewline
+        Write-Host "Use " -NoNewline
+        Write-Host "s <command>" -ForegroundColor Cyan -NoNewline
+        Write-Host " for usage details`n"
+    }
 }
 
 
