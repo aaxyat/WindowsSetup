@@ -85,8 +85,8 @@ function Edit-Profile {
 #
 
 function ll { Get-ChildItem -Path $pwd -File }
-function g { cd $HOME\Documents\Github }
-function p { cd $HOME\Documents\Projects }
+function g { Set-Location $HOME\Documents\Github }
+function p { Set-Location $HOME\Documents\Projects }
 function gcom {
         git add .
         git commit -m "$args"
@@ -103,7 +103,7 @@ Function Get-PubIP {
  (Invoke-WebRequest http://ifconfig.me/ip ).Content
 }
 function uptime {
-        Get-WmiObject win32_operatingsystem | select csname, @{LABEL = 'LastBootUpTime';
+        Get-WmiObject win32_operatingsystem | Select-Object csname, @{LABEL = 'LastBootUpTime';
                 EXPRESSION                                           = { $_.ConverttoDateTime($_.lastbootuptime) }
         }
 }
@@ -120,19 +120,19 @@ function reload-profile {
 }
 
 function find-file($name) {
-        ls -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | foreach {
+        Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
                 $place_path = $_.directory
-                echo "${place_path}\${_}"
+                Write-Output "${place_path}\${_}"
         }
 }
 function unzip ($file) {
-        echo("Extracting", $file, "to", $pwd)
+        Write-Output("Extracting", $file, "to", $pwd)
         $fullFile = Get-ChildItem -Path $pwd -Filter .\cove.zip | ForEach-Object { $_.FullName }
         Expand-Archive -Path $fullFile -DestinationPath $pwd
 }
 function grep($regex, $dir) {
         if ( $dir ) {
-                ls $dir | select-string $regex
+                Get-ChildItem $dir | select-string $regex
                 return
         }
         $input | select-string $regex
@@ -140,11 +140,11 @@ function grep($regex, $dir) {
 
 
 function mas {
-        irm https://get.activated.win | iex
+        Invoke-RestMethod https://get.activated.win | Invoke-Expression
 
 }
 function ctt {
-        iwr -useb https://christitus.com/win | iex
+        Invoke-WebRequest -useb https://christitus.com/win | Invoke-Expression
 }
 
 function touch($file) {
@@ -163,10 +163,10 @@ function export($name, $value) {
         set-item -force -path "env:$name" -value $value;
 }
 function pkill($name) {
-        ps $name -ErrorAction SilentlyContinue | kill
+        Get-Process $name -ErrorAction SilentlyContinue | Stop-Process
 }
 function pgrep($name) {
-        ps $name
+        Get-Process $name
 }
 # Function to quickly install a winget package
 
