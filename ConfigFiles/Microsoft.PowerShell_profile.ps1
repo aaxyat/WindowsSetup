@@ -83,7 +83,7 @@ function Edit-Profile {
 #
 # Aliases
 #
-New-Alias vim nvim
+
 function ll { Get-ChildItem -Path $pwd -File }
 function g { cd $HOME\Documents\Github }
 function p { cd $HOME\Documents\Projects }
@@ -108,7 +108,14 @@ function uptime {
         }
 }
 function reload-profile {
-    . $PROFILE
+    @(
+        $Profile.AllUsersAllHosts,
+        $Profile.AllUsersCurrentHost,
+        $Profile.CurrentUserAllHosts,
+        $Profile.CurrentUserCurrentHost
+    ) | Where-Object { Test-Path $_ } | ForEach-Object {
+        . $_
+    }
     Write-Host "Profile reloaded successfully!" -ForegroundColor Green
 }
 
@@ -161,6 +168,16 @@ function pkill($name) {
 function pgrep($name) {
         ps $name
 }
+# Function to quickly install a winget package
+
+function install {
+    param(
+        [Parameter(Position = 0)]
+        [String] $package
+    )
+
+    winget install -e $package
+}
 
 # Helper Function
 
@@ -204,6 +221,7 @@ function s {
         'pkill'         = @{desc = 'Terminate all processes matching specified name pattern'; usage = 'pkill name'; color = 'Red'}
         'pgrep'         = @{desc = 'Find and list all processes matching specified name pattern'; usage = 'pgrep name'; color = 'Yellow'}
         'vim'           = @{desc = 'Open specified file in Neovim text editor (alias for nvim)'; usage = 'vim file'; color = 'Blue'}
+        'install'       = @{desc = 'Install specified package using Windows Package Manager (winget)'; usage = 'install package'; color = 'Green'}
     }
 
     if ($command) {
@@ -239,7 +257,12 @@ function s {
     }
 }
 
-
+# Display welcome message about shortcuts
+Write-Host "`n✨ Welcome! " -ForegroundColor Magenta -NoNewline
+Write-Host "Type " -ForegroundColor White -NoNewline
+Write-Host "s" -ForegroundColor Cyan -NoNewline
+Write-Host " to see all available shortcuts and commands" -ForegroundColor White
+Write-Host ""
 
 # Import the Chocolatey Profile that contains the necessary code to enable
 # tab-completions to function for `choco`.
