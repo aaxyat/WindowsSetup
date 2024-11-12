@@ -97,7 +97,7 @@ function lazyg {
         git push
 }
 function npp {
-        start notepad++.exe $args
+        Start-Process notepad++.exe $args
 }
 Function Get-PubIP {
  (Invoke-WebRequest http://ifconfig.me/ip ).Content
@@ -179,6 +179,44 @@ function install {
     winget install -e $package
 }
 
+function update-profile {
+    $url = "https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/ConfigFiles/Microsoft.PowerShell_profile.ps1"
+    $backupPath = "$($PROFILE).backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+    
+    try {
+        # Create backup of current profile
+        if (Test-Path $PROFILE) {
+            Write-Host "📦 Creating backup of current profile..." -ForegroundColor Yellow
+            Copy-Item -Path $PROFILE -Destination $backupPath -ErrorAction Stop
+            Write-Host "✅ Backup created at: $backupPath" -ForegroundColor Green
+        }
+
+        # Download new profile
+        Write-Host "⬇️ Downloading new profile from GitHub..." -ForegroundColor Yellow
+        $newProfile = Invoke-WebRequest -Uri $url -UseBasicParsing -ErrorAction Stop
+
+        # Save new profile
+        if ($newProfile.StatusCode -eq 200) {
+            $newProfile.Content | Out-File -FilePath $PROFILE -Force -Encoding UTF8
+            Write-Host "✅ Profile updated successfully!" -ForegroundColor Green
+            Write-Host "🔄 Reloading profile..." -ForegroundColor Yellow
+            . $PROFILE
+            Write-Host "✨ Profile reloaded! You're all set!" -ForegroundColor Green
+        } else {
+            throw "Failed to download profile: HTTP Status $($newProfile.StatusCode)"
+        }
+    }
+    catch {
+        Write-Host "❌ Error updating profile: $($_.Exception.Message)" -ForegroundColor Red
+        if (Test-Path $backupPath) {
+            Write-Host "🔄 Restoring backup..." -ForegroundColor Yellow
+            Copy-Item -Path $backupPath -Destination $PROFILE -Force
+            Write-Host "✅ Backup restored successfully!" -ForegroundColor Green
+        }
+        return
+    }
+}
+
 # Helper Function
 
 function s {
@@ -222,6 +260,7 @@ function s {
         'pgrep'         = @{desc = 'Find and list all processes matching specified name pattern'; usage = 'pgrep name'; color = 'Yellow'}
         'vim'           = @{desc = 'Open specified file in Neovim text editor (alias for nvim)'; usage = 'vim file'; color = 'Blue'}
         'install'       = @{desc = 'Install specified package using Windows Package Manager (winget)'; usage = 'install package'; color = 'Green'}
+        'update-profile' = @{desc = 'Update PowerShell profile from GitHub repository'; usage = 'update-profile'; color = 'Cyan'}
     }
 
     if ($command) {
