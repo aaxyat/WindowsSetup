@@ -96,6 +96,7 @@ winget install --accept-package-agreements -e --id voidtools.Everything
 winget install --accept-package-agreements -e --id lin-ycv.EverythingPowerToys
 winget install --accept-package-agreements -e --id RadolynLabs.AyuGramDesktop
 winget install --accept-package-agreements -e --id Microsoft.VisualStudioCode
+winget install --accept-package-agreements -e --id IPVanish.IPVanish 
 # winget install --accept-package-agreements -e --id SoftDeluxe.FreeDownloadManager #Free Download Manager
 # winget install --accept-package-agreements -e --id spacedrive.Spacedrive
 # winget install --accept-package-agreements -e --id wez.wezterm
