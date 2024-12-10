@@ -83,7 +83,40 @@ function Edit-Profile {
 #
 # Aliases
 #
-
+# Function to uplaod to file.io
+function FileIO {
+        param(
+            [Parameter(Mandatory=$true)]
+            [string]$FilePath
+        )
+    
+        if (-not (Test-Path $FilePath)) {
+            Write-Error "File not found: $FilePath"
+            return
+        }
+    
+        try {
+            $curlArgs = @(
+                '-F',
+                "file=@$FilePath",
+                "https://file.io/?expires=1d"
+            )
+            
+            $response = curl.exe @curlArgs | ConvertFrom-Json
+    
+            if ($response.success) {
+                return $response.link
+            } else {
+                Write-Error "Upload failed: $($response.message)"
+            }
+        }
+        catch {
+            Write-Error "Error uploading file: $_"
+        }
+    }
+    
+# Create alias
+Set-Alias -Name fileio -Value FileIO
 function ll { Get-ChildItem -Path $pwd -File }
 function g { Set-Location $HOME\Documents\Github }
 function p { Set-Location $HOME\Documents\Projects }
