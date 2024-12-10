@@ -249,6 +249,10 @@ function update-profile {
         return
     }
 }
+# Alias 
+Set-Alias -Name fileio -Value FileIO
+Set-Alias -Name pubip -Value Get-PubIP
+ 
 
 # Helper Function
 
@@ -277,6 +281,7 @@ function s {
         'lazyg'         = @{desc = 'Stage, commit all changes and push to remote git repository'; usage = 'lazyg "message"'; color = 'DarkYellow'}
         'npp'           = @{desc = 'Open specified file in Notepad++ text editor'; usage = 'npp filename'; color = 'Blue'}
         'Get-PubIP'     = @{desc = 'Display current public IP address of the system'; usage = 'Get-PubIP'; color = 'Cyan'}
+        'pubip'         = @{desc = 'Display current public IP address of the system'; usage = 'pubip'; color = 'magenta'}
         'uptime'        = @{desc = 'Show system uptime since last boot with timestamp'; usage = 'uptime'; color = 'Cyan'}
         'reload-profile'= @{desc = 'Reload PowerShell profile to apply recent changes'; usage = 'reload-profile'; color = 'Cyan'}
         'find-file'     = @{desc = 'Recursively search for files matching specified pattern'; usage = 'find-file name'; color = 'Yellow'}
@@ -294,6 +299,9 @@ function s {
         'vim'           = @{desc = 'Open specified file in Neovim text editor (alias for nvim)'; usage = 'vim file'; color = 'Blue'}
         'install'       = @{desc = 'Install specified package using Windows Package Manager (winget)'; usage = 'install package'; color = 'Green'}
         'update-profile' = @{desc = 'Update PowerShell profile from GitHub repository'; usage = 'update-profile'; color = 'Cyan'}
+        'FileIO'        = @{desc = 'Upload specified file to file.io and get shareable link'; usage = 'FileIO file'; color = 'Magenta'}
+        'fileio'        = @{desc = 'Upload specified file to file.io and get shareable link'; usage = 'fileio file'; color = 'Magenta'}
+
     }
 
     if ($command) {
