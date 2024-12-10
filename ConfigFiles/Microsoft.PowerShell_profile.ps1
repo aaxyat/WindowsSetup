@@ -132,9 +132,26 @@ function lazyg {
 function npp {
         Start-Process notepad++.exe $args
 }
-Function Get-PubIP {
- (Invoke-WebRequest http://ifconfig.me/ip ).Content
+
+function Get-PubIP4 {
+
+        if (!(Get-Command curl -ErrorAction SilentlyContinue)) {
+                Write-Error "curl is not installed. Please install curl using 'winget install curl'"
+                return
+        }
+        curl -4 https://ipconfig.io/ip
 }
+
+function Get-PubIP6 {
+        if (!(Get-Command curl -ErrorAction SilentlyContinue)) {
+                Write-Error "curl is not installed. Please install curl using 'winget install curl'"
+                return
+        }
+        curl -6 https://ipconfig.io/ip
+}
+
+
+
 function uptime {
         Get-WmiObject win32_operatingsystem | Select-Object csname, @{LABEL = 'LastBootUpTime';
                 EXPRESSION                                           = { $_.ConverttoDateTime($_.lastbootuptime) }
@@ -251,7 +268,8 @@ function update-profile {
 }
 # Alias 
 Set-Alias -Name fileio -Value FileIO
-Set-Alias -Name pubip -Value Get-PubIP
+Set-Alias -Name pubip4 -Value Get-PubIP4
+Set-Alias -Name pubip6 -Value Get-PubIP6
  
 
 # Helper Function
@@ -280,8 +298,10 @@ function s {
         'gcom'          = @{desc = 'Stage all changes and create a git commit with specified message'; usage = 'gcom "message"'; color = 'DarkYellow'}
         'lazyg'         = @{desc = 'Stage, commit all changes and push to remote git repository'; usage = 'lazyg "message"'; color = 'DarkYellow'}
         'npp'           = @{desc = 'Open specified file in Notepad++ text editor'; usage = 'npp filename'; color = 'Blue'}
-        'Get-PubIP'     = @{desc = 'Display current public IP address of the system'; usage = 'Get-PubIP'; color = 'Cyan'}
-        'pubip'         = @{desc = 'Display current public IP address of the system'; usage = 'pubip'; color = 'magenta'}
+        'Get-PubIP4'    = @{desc = 'Display current public IPv4 address of the system'; usage = 'Get-PubIP'; color = 'Cyan'}
+        'pubip4'        = @{desc = 'Display current public IPv4 address of the system'; usage = 'pubip'; color = 'magenta'}
+        'Get-PubIP6'    = @{desc = 'Display current public IPv6 address of the system'; usage = 'Get-PubIP6'; color = 'Cyan'}
+        'pubip6'        = @{desc = 'Display current public IPv6 address of the system'; usage = 'pubip6'; color = 'magenta'}
         'uptime'        = @{desc = 'Show system uptime since last boot with timestamp'; usage = 'uptime'; color = 'Cyan'}
         'reload-profile'= @{desc = 'Reload PowerShell profile to apply recent changes'; usage = 'reload-profile'; color = 'Cyan'}
         'find-file'     = @{desc = 'Recursively search for files matching specified pattern'; usage = 'find-file name'; color = 'Yellow'}
@@ -298,10 +318,8 @@ function s {
         'pgrep'         = @{desc = 'Find and list all processes matching specified name pattern'; usage = 'pgrep name'; color = 'Yellow'}
         'vim'           = @{desc = 'Open specified file in Neovim text editor (alias for nvim)'; usage = 'vim file'; color = 'Blue'}
         'install'       = @{desc = 'Install specified package using Windows Package Manager (winget)'; usage = 'install package'; color = 'Green'}
-        'update-profile' = @{desc = 'Update PowerShell profile from GitHub repository'; usage = 'update-profile'; color = 'Cyan'}
-        'FileIO'        = @{desc = 'Upload specified file to file.io and get shareable link'; usage = 'FileIO file'; color = 'Magenta'}
-        'fileio'        = @{desc = 'Upload specified file to file.io and get shareable link'; usage = 'fileio file'; color = 'Magenta'}
-
+        'update-profile'= @{desc = 'Update PowerShell profile from GitHub repository'; usage = 'update-profile'; color = 'Cyan'}
+        'FileIO'        = @{desc = 'Upload specified file to file.io and get shareable link (alias: fileio)'; usage = 'FileIO file | fileio file'; color = 'Magenta'}
     }
 
     if ($command) {
