@@ -3,6 +3,7 @@ Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineOption -PredictionViewStyle ListView
 Set-PSReadLineOption -EditMode Windows
+Set-PSReadLineOption -HistorySavePath "P:\ps-history\ConsoleHost_history.txt"
 
 Invoke-Expression (&starship init powershell)
 
