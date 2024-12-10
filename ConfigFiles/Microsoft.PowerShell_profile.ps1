@@ -115,8 +115,6 @@ function FileIO {
         }
     }
     
-# Create alias
-Set-Alias -Name fileio -Value FileIO
 function ll { Get-ChildItem -Path $pwd -File }
 function g { Set-Location $HOME\Documents\Github }
 function p { Set-Location $HOME\Documents\Projects }
@@ -267,7 +265,6 @@ function update-profile {
     }
 }
 # Alias 
-Set-Alias -Name fileio -Value FileIO
 Set-Alias -Name pubip4 -Value Get-PubIP4
 Set-Alias -Name pubip6 -Value Get-PubIP6
  
