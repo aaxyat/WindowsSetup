@@ -85,10 +85,10 @@ winget install --accept-package-agreements -e --id tailscale.tailscale
 # winget install --accept-package-agreements -e --id TechNobo.TcNoAccountSwitcher
 # winget install --accept-package-agreements -e --id hluk.CopyQ
 winget install --accept-package-agreements -e --id Valve.Steam
-winget install --accept-package-agreements -e --id Microsoft.PowerToys
+# winget install --accept-package-agreements -e --id Microsoft.PowerToys
 winget install --accept-package-agreements -e --id voidtools.Everything
-winget install --accept-package-agreements -e --id lin-ycv.EverythingPowerToys
-winget install --accept-package-agreements -e --id RadolynLabs.AyuGramDesktop
+# winget install --accept-package-agreements -e --id lin-ycv.EverythingPowerToys
+# winget install --accept-package-agreements -e --id RadolynLabs.AyuGramDesktop
 winget install --accept-package-agreements -e --id Microsoft.VisualStudioCode
 winget install --accept-package-agreements -e --id IPVanish.IPVanish 
 # winget install --accept-package-agreements -e --id SoftDeluxe.FreeDownloadManager #Free Download Manager
