@@ -58,6 +58,25 @@ function dirs {
         }
 }
 
+# Function to create requirements.txt from a poetry requirements
+function Export-PoetryRequirements {
+        [CmdletBinding()]
+        param()
+    
+        # Export requirements and clean up the output
+        poetry export --without-hashes | 
+            ForEach-Object { 
+                # Split on semicolon and take the first part (package and version)
+                ($_ -split ';')[0].Trim() 
+            } | 
+            Set-Content -Path requirements.txt
+    
+        Write-Host "Created requirements.txt with clean package versions"
+    }
+    
+# Set an alias for convenience
+Set-Alias requirements Export-PoetryRequirements
+
 # Simple function to start a new elevated process. If arguments are supplied then 
 # a single command is started with admin rights; if not then a new admin instance
 # of PowerShell is started.
@@ -83,39 +102,7 @@ function Edit-Profile {
 
 #
 # Aliases
-#
-# Function to uplaod to file.io
-function FileIO {
-        param(
-            [Parameter(Mandatory=$true)]
-            [string]$FilePath
-        )
-    
-        if (-not (Test-Path $FilePath)) {
-            Write-Error "File not found: $FilePath"
-            return
-        }
-    
-        try {
-            $curlArgs = @(
-                '-F',
-                "file=@$FilePath",
-                "https://file.io/?expires=1d"
-            )
-            
-            $response = curl.exe @curlArgs | ConvertFrom-Json
-    
-            if ($response.success) {
-                return $response.link
-            } else {
-                Write-Error "Upload failed: $($response.message)"
-            }
-        }
-        catch {
-            Write-Error "Error uploading file: $_"
-        }
-    }
-    
+#    
 function ll { Get-ChildItem -Path $pwd -File }
 function g { Set-Location $HOME\Documents\Github }
 function p { Set-Location $HOME\Documents\Projects }
@@ -317,7 +304,7 @@ function s {
         'vim'           = @{desc = 'Open specified file in Neovim text editor (alias for nvim)'; usage = 'vim file'; color = 'Blue'}
         'install'       = @{desc = 'Install specified package using Windows Package Manager (winget)'; usage = 'install package'; color = 'Green'}
         'update-profile'= @{desc = 'Update PowerShell profile from GitHub repository'; usage = 'update-profile'; color = 'Cyan'}
-        'FileIO'        = @{desc = 'Upload specified file to file.io and get shareable link (alias: fileio)'; usage = 'FileIO file | fileio file'; color = 'Magenta'}
+        'requirements'  = @{desc = 'Export clean package versions from Poetry requirements file'; usage = 'requirements'; color = 'Magenta'}
     }
 
     if ($command) {
