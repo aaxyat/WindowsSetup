@@ -98,6 +98,7 @@ winget install --accept-package-agreements -e --id IPVanish.IPVanish
 # winget install --accept-package-agreements -e --id spacedrive.Spacedrive
 # winget install --accept-package-agreements -e --id wez.wezterm
 winget install --accept-package-agreements -e --id Ferdium.Ferdium  
+winget install --accept-package-agreements -e --id futo-org.Grayjay.Desktop
 
 
 
