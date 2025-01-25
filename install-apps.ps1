@@ -53,7 +53,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
  # # Install the required packages using Chocolatey
 
-$packages = @(,"fzf", "zoxide", "python", "autohotkey", "windirstat", "winfsp", "nssm", "termius", "notepadplusplus.install", "gsudo", "git", "starship",  "vlc", "mpv", "teracopy", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
+$packages = @(,"fzf", "zoxide", "python", "autohotkey", "windirstat", "winfsp", "nssm", "notepadplusplus.install", "gsudo", "git", "starship",  "vlc", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
 $totalPackages = $packages.Count
 
 Write-Host "Installing packages using Chocolatey..."
@@ -68,8 +68,11 @@ Write-Host "Packages installation completed."
 # # Install the required packages using winget
 Write-Host "Installing packages using winget..."
 winget install --accept-package-agreements -e --id Brave.Brave
-winget install --accept-package-agreements -e --id Giorgiotani.Peazip 
-winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
+winget install --accept-package-agreements -e --id 7zip.7zip
+winget install --accept-package-agreements -e --id calibre.calibre
+winget install --accept-package-agreements -e --id Amazon.SendToKindle
+# winget install --accept-package-agreements -e --id Giorgiotani.Peazip 
+# winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
 winget install --accept-package-agreements -e --id StartIsBack.StartAllBack
 # winget install --accept-package-agreements -e --id AppWork.JDownloader
 # winget install --accept-package-agreements -e --id HeroicGamesLauncher.HeroicGamesLauncher
@@ -88,12 +91,13 @@ winget install --accept-package-agreements -e --id Valve.Steam
 # winget install --accept-package-agreements -e --id Microsoft.PowerToys
 winget install --accept-package-agreements -e --id voidtools.Everything
 # winget install --accept-package-agreements -e --id lin-ycv.EverythingPowerToys
-# winget install --accept-package-agreements -e --id RadolynLabs.AyuGramDesktop
+winget install --accept-package-agreements -e --id RadolynLabs.AyuGramDesktop
 winget install --accept-package-agreements -e --id Microsoft.VisualStudioCode
 winget install --accept-package-agreements -e --id IPVanish.IPVanish 
 # winget install --accept-package-agreements -e --id SoftDeluxe.FreeDownloadManager #Free Download Manager
 # winget install --accept-package-agreements -e --id spacedrive.Spacedrive
 # winget install --accept-package-agreements -e --id wez.wezterm
+winget install --accept-package-agreements -e --id Ferdium.Ferdium  
 
 
 
@@ -102,6 +106,7 @@ Write-Host "Packages installation completed."
 # Install the required packages from the Windows Store
 Write-Host "Installing packages from the Windows Store..."
 winget install --accept-package-agreements --id 9P92N00QV14J # HP Command Center
+winget install --accept-package-agreements --id 9P1FBSLRNM43 # BatteryTracker
 # winget install --accept-package-agreements --id 9PCKT2B7DZMW # Battery Percentage icon
 winget install --accept-package-agreements --id 9NM8N7DQ3Z5F # WinDynamicDesktop
 winget install --accept-package-agreements --id 9NKSQGP7F2NH # Whatsapp
