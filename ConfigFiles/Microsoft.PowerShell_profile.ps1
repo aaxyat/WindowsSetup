@@ -255,6 +255,7 @@ function update-profile {
 # Alias 
 Set-Alias -Name pubip4 -Value Get-PubIP4
 Set-Alias -Name pubip6 -Value Get-PubIP6
+Set-Alias -Name sudo -Value gsudo
  
 
 # Helper Function
