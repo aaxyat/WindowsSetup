@@ -53,7 +53,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
  # # Install the required packages using Chocolatey
 
-$packages = @(,"fzf", "zoxide", "python", "autohotkey", "windirstat", "winfsp", "nssm", "notepadplusplus.install", "gsudo", "git", "starship",  "vlc", "qbittorrent", "rclone", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "nodejs.install", "curl", "stremio")
+$packages = @(, "python", "autohotkey", "gsudo", "qbittorrent", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "curl", "stremio")
 $totalPackages = $packages.Count
 
 Write-Host "Installing packages using Chocolatey..."
@@ -67,18 +67,28 @@ Write-Host "Packages installation completed."
 
 # # Install the required packages using winget
 Write-Host "Installing packages using winget..."
+winget install --accept-package-agreements -e --id WinDirStat.WinDirStat
+winget install --accept-package-agreements -e --id Git.Git
+winget install --accept-package-agreements -e --id Starship.Starship
+winget install --accept-package-agreements -e --id VideoLAN.VLC
 winget install --accept-package-agreements -e --id Brave.Brave
+winget install --accept-package-agreements -e --id Rclone.Rclone
+winget install --accept-package-agreements -e --id WinFsp.WinFsp
 winget install --accept-package-agreements -e --id 7zip.7zip
+winget install --accept-package-agreements -e --id NSSM.NSSM
+winget install --accept-package-agreements -e --id junegunn.fzf 
+winget install --accept-package-agreements -e --id ajeetdsouza.zoxide
+winget install --accept-package-agreements -e --id Notepad++.Notepad++
 winget install --accept-package-agreements -e --id calibre.calibre
 winget install --accept-package-agreements -e --id Amazon.SendToKindle
 # winget install --accept-package-agreements -e --id Giorgiotani.Peazip 
 # winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
 winget install --accept-package-agreements -e --id StartIsBack.StartAllBack
-# winget install --accept-package-agreements -e --id AppWork.JDownloader
+winget install --accept-package-agreements -e --id AppWork.JDownloader
 # winget install --accept-package-agreements -e --id HeroicGamesLauncher.HeroicGamesLauncher
 winget install --accept-package-agreements -e --id Bitwarden.Bitwarden
 winget install --accept-package-agreements -e --id Bitwarden.CLI
-# winget install --accept-package-agreements -e --id JetBrains.Toolbox
+winget install --accept-package-agreements -e --id JetBrains.Toolbox
 winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
 winget install --accept-package-agreements -e --id WireGuard.WireGuard
 winget install --accept-package-agreements -e --id Mozilla.Firefox
@@ -88,9 +98,9 @@ winget install --accept-package-agreements -e --id tailscale.tailscale
 # winget install --accept-package-agreements -e --id TechNobo.TcNoAccountSwitcher
 # winget install --accept-package-agreements -e --id hluk.CopyQ
 winget install --accept-package-agreements -e --id Valve.Steam
-# winget install --accept-package-agreements -e --id Microsoft.PowerToys
+winget install --accept-package-agreements -e --id Microsoft.PowerToys
 winget install --accept-package-agreements -e --id voidtools.Everything
-# winget install --accept-package-agreements -e --id lin-ycv.EverythingPowerToys
+winget install --accept-package-agreements -e --id lin-ycv.EverythingPowerToys
 winget install --accept-package-agreements -e --id RadolynLabs.AyuGramDesktop
 winget install --accept-package-agreements -e --id Microsoft.VisualStudioCode
 winget install --accept-package-agreements -e --id IPVanish.IPVanish 
