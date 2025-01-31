@@ -106,7 +106,7 @@ $wingetPackages = @(
     # 'SoftDeluxe.FreeDownloadManager',
     # 'spacedrive.Spacedrive',
     # 'wez.wezterm',
-    'Ferdium.Ferdium',
+    'Ferdium.Ferdium'
    #  'futo-org.Grayjay.Desktop'
 )
 
@@ -120,7 +120,7 @@ $storePackages = @(
     'XPFM5P5KDWF0JP', # Viber
     # '9N97ZCKPD60Q', # Unigram
     # '9ncrcvjc50wl', # WinnowMail
-    '9n0dx20hk701', # Windows Terminal
+    '9n0dx20hk701' # Windows Terminal
     # '9PMHZVM588P4'  # Bluemail
 )
 
