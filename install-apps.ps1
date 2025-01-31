@@ -64,69 +64,123 @@ for ($i = 0; $i -lt $totalPackages; $i++) {
 }
 
 Write-Host "Packages installation completed."
+# Regular winget packages
+$wingetPackages = @(
+    'WinDirStat.WinDirStat',
+    'Git.Git',
+    'Starship.Starship',
+    'VideoLAN.VLC',
+    'Brave.Brave',
+    'Rclone.Rclone',
+    'WinFsp.WinFsp',
+    '7zip.7zip',
+    'NSSM.NSSM',
+    'junegunn.fzf',
+    'ajeetdsouza.zoxide',
+    'Notepad++.Notepad++',
+    'calibre.calibre',
+    'Amazon.SendToKindle',
+    # 'Giorgiotani.Peazip',
+    # 'Tonec.InternetDownloadManager',
+    'StartIsBack.StartAllBack',
+    'AppWork.JDownloader',
+    # 'HeroicGamesLauncher.HeroicGamesLauncher',
+    'Bitwarden.Bitwarden',
+    'Bitwarden.CLI',
+    'JetBrains.Toolbox',
+    'pCloudAG.pCloudDrive',
+    'WireGuard.WireGuard',
+    'Mozilla.Firefox',
+    'GitHub.GitHubDesktop',
+    'tailscale.tailscale',
+    # 'Axosoft.GitKraken',
+    # 'TechNobo.TcNoAccountSwitcher',
+    # 'hluk.CopyQ',
+    'Valve.Steam',
+    'Microsoft.PowerToys',
+    'voidtools.Everything',
+    'lin-ycv.EverythingPowerToys',
+    'RadolynLabs.AyuGramDesktop',
+    'Microsoft.VisualStudioCode',
+    'IPVanish.IPVanish',
+    # 'SoftDeluxe.FreeDownloadManager',
+    # 'spacedrive.Spacedrive',
+    # 'wez.wezterm',
+    'Ferdium.Ferdium',
+   #  'futo-org.Grayjay.Desktop'
+)
 
-# # Install the required packages using winget
-Write-Host "Installing packages using winget..."
-winget install --accept-package-agreements -e --id WinDirStat.WinDirStat
-winget install --accept-package-agreements -e --id Git.Git
-winget install --accept-package-agreements -e --id Starship.Starship
-winget install --accept-package-agreements -e --id VideoLAN.VLC
-winget install --accept-package-agreements -e --id Brave.Brave
-winget install --accept-package-agreements -e --id Rclone.Rclone
-winget install --accept-package-agreements -e --id WinFsp.WinFsp
-winget install --accept-package-agreements -e --id 7zip.7zip
-winget install --accept-package-agreements -e --id NSSM.NSSM
-winget install --accept-package-agreements -e --id junegunn.fzf 
-winget install --accept-package-agreements -e --id ajeetdsouza.zoxide
-winget install --accept-package-agreements -e --id Notepad++.Notepad++
-winget install --accept-package-agreements -e --id calibre.calibre
-winget install --accept-package-agreements -e --id Amazon.SendToKindle
-# winget install --accept-package-agreements -e --id Giorgiotani.Peazip 
-# winget install --accept-package-agreements -e --id Tonec.InternetDownloadManager
-winget install --accept-package-agreements -e --id StartIsBack.StartAllBack
-winget install --accept-package-agreements -e --id AppWork.JDownloader
-# winget install --accept-package-agreements -e --id HeroicGamesLauncher.HeroicGamesLauncher
-winget install --accept-package-agreements -e --id Bitwarden.Bitwarden
-winget install --accept-package-agreements -e --id Bitwarden.CLI
-winget install --accept-package-agreements -e --id JetBrains.Toolbox
-winget install --accept-package-agreements -e --id pCloudAG.pCloudDrive
-winget install --accept-package-agreements -e --id WireGuard.WireGuard
-winget install --accept-package-agreements -e --id Mozilla.Firefox
-winget install --accept-package-agreements -e --id GitHub.GitHubDesktop
-winget install --accept-package-agreements -e --id tailscale.tailscale
-# winget install --accept-package-agreements -e --id Axosoft.GitKraken
-# winget install --accept-package-agreements -e --id TechNobo.TcNoAccountSwitcher
-# winget install --accept-package-agreements -e --id hluk.CopyQ
-winget install --accept-package-agreements -e --id Valve.Steam
-winget install --accept-package-agreements -e --id Microsoft.PowerToys
-winget install --accept-package-agreements -e --id voidtools.Everything
-winget install --accept-package-agreements -e --id lin-ycv.EverythingPowerToys
-winget install --accept-package-agreements -e --id RadolynLabs.AyuGramDesktop
-winget install --accept-package-agreements -e --id Microsoft.VisualStudioCode
-winget install --accept-package-agreements -e --id IPVanish.IPVanish 
-# winget install --accept-package-agreements -e --id SoftDeluxe.FreeDownloadManager #Free Download Manager
-# winget install --accept-package-agreements -e --id spacedrive.Spacedrive
-# winget install --accept-package-agreements -e --id wez.wezterm
-winget install --accept-package-agreements -e --id Ferdium.Ferdium  
-winget install --accept-package-agreements -e --id futo-org.Grayjay.Desktop
+# Windows Store packages
+$storePackages = @(
+    '9P92N00QV14J', # HP Command Center
+    '9P1FBSLRNM43', # BatteryTracker
+    # '9PCKT2B7DZMW', # Battery Percentage icon
+    '9NM8N7DQ3Z5F', # WinDynamicDesktop
+   #  '9NKSQGP7F2NH', # Whatsapp
+    'XPFM5P5KDWF0JP', # Viber
+    # '9N97ZCKPD60Q', # Unigram
+    # '9ncrcvjc50wl', # WinnowMail
+    '9n0dx20hk701', # Windows Terminal
+    # '9PMHZVM588P4'  # Bluemail
+)
 
+function Show-InstallationProgress {
+    param (
+        [int]$Current,
+        [int]$Total,
+        [string]$PackageName,
+        [string]$Type
+    )
+    
+    $percentComplete = [math]::Round(($Current / $Total) * 100)
+    Write-Host "[$Type] Installing ($Current/$Total): $PackageName" -ForegroundColor Cyan
+    Write-Progress -Activity "Installing $Type" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
+}
 
+function Install-Packages {
+    param (
+        [string[]]$PackageIds,
+        [string]$Type
+    )
+    
+    Write-Host "`nStarting $Type installation..." -ForegroundColor Blue
+    
+    $activePackages = ($PackageIds | Where-Object { $_ -notmatch '^\s*#' })
+    $total = $activePackages.Count
+    $current = 0
+    
+    foreach ($package in $PackageIds) {
+        if ($package -match '^\s*#') {
+            continue
+        }
+        
+        $current++
+        Show-InstallationProgress -Current $current -Total $total -PackageName $package -Type $Type
+        
+        winget install --accept-package-agreements --id $package
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Successfully installed $package" -ForegroundColor Green
+        } else {
+            Write-Host "Failed to install $package" -ForegroundColor Red
+        }
+    }
+    
+    Write-Host "`n$Type installation completed.`n" -ForegroundColor Blue
+    Write-Progress -Activity "Installing $Type" -Completed
+}
 
-Write-Host "Packages installation completed."
+# Main installation process
+Clear-Host
+Write-Host "Starting package installation process..." -ForegroundColor Blue
 
-# Install the required packages from the Windows Store
-Write-Host "Installing packages from the Windows Store..."
-winget install --accept-package-agreements --id 9P92N00QV14J # HP Command Center
-winget install --accept-package-agreements --id 9P1FBSLRNM43 # BatteryTracker
-# winget install --accept-package-agreements --id 9PCKT2B7DZMW # Battery Percentage icon
-winget install --accept-package-agreements --id 9NM8N7DQ3Z5F # WinDynamicDesktop
-winget install --accept-package-agreements --id 9NKSQGP7F2NH # Whatsapp
-winget install --accept-package-agreements --id XPFM5P5KDWF0JP # Viber
-# winget install --accept-package-agreements --id 9N97ZCKPD60Q # Unigram
-# winget install --accept-package-agreements --id 9ncrcvjc50wl # WinnowMail
-winget install --accept-package-agreements --id 9n0dx20hk701 # Windows Terminal
-# winget install --accept-package-agreements --id 9PMHZVM588P4 #Bluemail
-Write-Host "Packages installation completed."
+# Install regular packages
+Install-Packages -PackageIds $wingetPackages -Type "Regular Applications"
+
+# Install Store packages
+Install-Packages -PackageIds $storePackages -Type "Microsoft Store Applications"
+
+Write-Host "All installations completed." -ForegroundColor Green
 
 
 
