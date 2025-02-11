@@ -182,6 +182,9 @@ function mas {
 function ctt {
         Invoke-WebRequest -useb https://christitus.com/win | Invoke-Expression
 }
+function betterbrave {
+        Invoke-WebRequest -useb https://raw.githubusercontent.com/aaxyat/BetterBrave/refs/heads/main/BetterBrave.ps1 | Invoke-Expression
+}
 
 function touch($file) {
         "" | Out-File $file -Encoding ASCII
@@ -306,6 +309,7 @@ function s {
         'install'       = @{desc = 'Install specified package using Windows Package Manager (winget)'; usage = 'install package'; color = 'Green'}
         'update-profile'= @{desc = 'Update PowerShell profile from GitHub repository'; usage = 'update-profile'; color = 'Cyan'}
         'requirements'  = @{desc = 'Export clean package versions from Poetry requirements file'; usage = 'requirements'; color = 'Magenta'}
+        'betterbrave'   = @{desc = 'Run BetterBrave script for Brave Browser setup and optimization'; usage = 'betterbrave'; color = 'Red'}
     }
 
     if ($command) {
