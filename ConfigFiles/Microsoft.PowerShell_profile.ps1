@@ -218,6 +218,88 @@ function install {
     winget install -e $package
 }
 
+function Set-DoH {
+    [CmdletBinding()]
+    param()
+    
+    # Check for admin privileges
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+    
+    if (-not $isAdmin) {
+        Write-Host "Error: This command requires administrator privileges." -ForegroundColor Red
+        Write-Host "Please run PowerShell as Administrator and try again." -ForegroundColor Yellow
+        return
+    }
+
+    # Define Cloudflare DoH server addresses
+    $DoHServerAddresses = @(
+        "https://dns.cloudflare.com/dns-query",
+        "https://dns.cloudflare.com/dns-query"
+    )
+
+    # Define Cloudflare IPv4 addresses (as fallback)
+    $IPv4Addresses = @(
+        "1.1.1.1",
+        "1.0.0.1"
+    )
+
+    # Define Cloudflare IPv6 addresses (as fallback)
+    $IPv6Addresses = @(
+        "2606:4700:4700::1111",
+        "2606:4700:4700::1001"
+    )
+
+    try {
+        $activeInterfaces = Get-NetAdapter | Where-Object {$_.Status -eq "Up"}
+        
+        foreach ($interface in $activeInterfaces) {
+            Write-Host "`nConfiguring interface: $($interface.Name)" -ForegroundColor Cyan
+            
+            # Enable IPv4 and IPv6
+            Set-NetIPInterface -InterfaceIndex $interface.ifIndex -IPv4Enabled $true
+            Set-NetIPInterface -InterfaceIndex $interface.ifIndex -IPv6Enabled $true
+            
+            # Set DNS over HTTPS
+            try {
+                Set-DnsClientDohServerAddress -InterfaceIndex $interface.ifIndex -ServerAddress $DoHServerAddresses
+                Write-Host "Successfully configured DoH servers" -ForegroundColor Green
+            } catch {
+                Write-Host "Warning: Could not set DoH servers. Falling back to traditional DNS." -ForegroundColor Yellow
+                
+                # Set IPv4 and IPv6 DNS servers
+                Set-DnsClientServerAddress -InterfaceIndex $interface.ifIndex -ServerAddresses $IPv4Addresses
+                Set-DnsClientServerAddress -InterfaceIndex $interface.ifIndex -ServerAddresses $IPv6Addresses
+            }
+            
+            # Verify configuration
+            $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $interface.ifIndex
+            
+            Write-Host "`nCurrent DNS Configuration for $($interface.Name):"
+            Write-Host "IPv4 DNS Servers:" -ForegroundColor Yellow
+            $dnsServers | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
+            
+            Write-Host "IPv6 DNS Servers:" -ForegroundColor Yellow
+            $dnsServers | Where-Object {$_.AddressFamily -eq 23} | Select-Object -ExpandProperty ServerAddresses
+            
+            if (Get-Command "Get-DnsClientDohServerAddress" -ErrorAction SilentlyContinue) {
+                Write-Host "DoH Servers:" -ForegroundColor Yellow
+                Get-DnsClientDohServerAddress -InterfaceIndex $interface.ifIndex | Select-Object -ExpandProperty ServerAddress
+            }
+        }
+        
+        # Flush DNS cache
+        Write-Host "`nFlushing DNS cache..." -ForegroundColor Cyan
+        ipconfig /flushdns
+        
+        Write-Host "`nConfiguration complete!" -ForegroundColor Green
+    } catch {
+        Write-Host "`nError during configuration: $_" -ForegroundColor Red
+    }
+}
+
+# Add an alias for easier use
+Set-Alias -Name doh -Value Set-DoH
+
 function update-profile {
     $url = "https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/ConfigFiles/Microsoft.PowerShell_profile.ps1"
     $backupPath = "$($PROFILE).backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
@@ -270,7 +352,7 @@ function s {
     )
 
     $shortcuts = @{
-        'acm'            = @{desc = 'Git add all changes, commit with message and push to remote in one command'; usage = 'acm "commit message"'; color = 'DarkYellow'}
+        'acm'           = @{desc = 'Git add all changes, commit with message and push to remote in one command'; usage = 'acm "commit message"'; color = 'DarkYellow'}
         'cinst'         = @{desc = 'Install packages using Chocolatey package manager with admin privileges'; usage = 'cinst package-name'; color = 'Blue'}
         'cd...'         = @{desc = 'Navigate up two directory levels from current location'; usage = 'cd...'; color = 'Green'}
         'cd....'        = @{desc = 'Navigate up three directory levels from current location'; usage = 'cd....'; color = 'Green'}
@@ -310,6 +392,8 @@ function s {
         'update-profile'= @{desc = 'Update PowerShell profile from GitHub repository'; usage = 'update-profile'; color = 'Cyan'}
         'requirements'  = @{desc = 'Export clean package versions from Poetry requirements file'; usage = 'requirements'; color = 'Magenta'}
         'betterbrave'   = @{desc = 'Run BetterBrave script for Brave Browser setup and optimization'; usage = 'betterbrave'; color = 'Red'}
+        'Set-DoH'       = @{desc = 'Configure Cloudflare DNS over HTTPS with IPv4 and IPv6 support (requires admin)'; usage = 'Set-DoH'; color = 'Cyan'}
+        'doh'           = @{desc = 'Configure Cloudflare DNS over HTTPS with IPv4 and IPv6 support (requires admin)'; usage = 'doh'; color = 'Cyan'}
     }
 
     if ($command) {
