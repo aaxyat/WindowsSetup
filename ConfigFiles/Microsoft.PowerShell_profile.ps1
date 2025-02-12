@@ -255,9 +255,8 @@ function Set-DoH {
         foreach ($interface in $activeInterfaces) {
             Write-Host "`nConfiguring interface: $($interface.Name)" -ForegroundColor Cyan
             
-            # Enable IPv4 and IPv6
-            Set-NetIPInterface -InterfaceIndex $interface.ifIndex -IPv4Enabled $true
-            Set-NetIPInterface -InterfaceIndex $interface.ifIndex -IPv6Enabled $true
+            # Get current IP configuration without trying to enable/disable
+            $ipConfig = Get-NetIPInterface -InterfaceIndex $interface.ifIndex
             
             # Set DNS over HTTPS
             try {
