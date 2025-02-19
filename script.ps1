@@ -121,8 +121,8 @@ if (!(Test-Path -Path $githubFolder)) {
    New-Item -ItemType Directory -Force -Path $githubFolder
 }
 
-# Install Ubuntu
-wsl --install -d Ubuntu
+# # Install Ubuntu
+# wsl --install -d Ubuntu
 
 
 # Stop the transcript at the end of the script
