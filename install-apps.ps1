@@ -94,7 +94,7 @@ $wingetPackages = @(
     'GitHub.GitHubDesktop',
     'tailscale.tailscale',
     # 'Axosoft.GitKraken',
-    # 'TechNobo.TcNoAccountSwitcher',
+    'TechNobo.TcNoAccountSwitcher',
     # 'hluk.CopyQ',
     'Valve.Steam',
     'Microsoft.PowerToys',
@@ -106,7 +106,10 @@ $wingetPackages = @(
     # 'SoftDeluxe.FreeDownloadManager',
     # 'spacedrive.Spacedrive',
     # 'wez.wezterm',
-    'Ferdium.Ferdium'
+    'Ferdium.Ferdium',
+    'SublimeHQ.SublimeText.4',
+    'Jellyfin.JellyfinMediaPlayer',
+    'IanWalton.JellyfinMPVShim'
    #  'futo-org.Grayjay.Desktop'
 )
 
@@ -115,9 +118,10 @@ $storePackages = @(
     '9P92N00QV14J', # HP Command Center
     '9P1FBSLRNM43', # BatteryTracker
     # '9PCKT2B7DZMW', # Battery Percentage icon
-    '9NM8N7DQ3Z5F', # WinDynamicDesktop
+    # '9NM8N7DQ3Z5F', # WinDynamicDesktop
    #  '9NKSQGP7F2NH', # Whatsapp
     'XPFM5P5KDWF0JP', # Viber
+    '9NK1GDVPX09V', #Termius
     # '9N97ZCKPD60Q', # Unigram
     # '9ncrcvjc50wl', # WinnowMail
     '9n0dx20hk701' # Windows Terminal
