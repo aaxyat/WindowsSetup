@@ -66,9 +66,24 @@ cd ~
 echo "Setting up Fish shell..."
 sudo apt-fast install -y fish
 
+# Create Fish configuration directory if it doesn't exist
+mkdir -p ~/.config/fish/
+
+# Create initial Fish configuration
+echo "Setting up initial Fish configuration..."
+cat > ~/.config/fish/config.fish << 'EOL'
+# Basic Fish configuration
+# This will be replaced with a more complete version later
+
+# Add local bin to path
+if test -d "$HOME/.local/bin"
+    set -gx PATH $HOME/.local/bin $PATH
+end
+EOL
+
 # Install Oh My Fish
 echo "Installing Oh My Fish..."
-curl -L https://get.oh-my.fish | fish
+fish -c "curl -L https://get.oh-my.fish | fish"
 
 # Install bira theme for Fish
 echo "Installing bira theme for Fish..."
@@ -79,7 +94,28 @@ fish -c "omf theme bira"
 
 # Install Fisher (plugin manager for Fish)
 echo "Installing Fisher plugin manager..."
-curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
+fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
+
+# Install nvm (Node Version Manager)
+echo "Installing nvm..."
+if [ ! -d "$HOME/.nvm" ]; then
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+    
+    # Source nvm immediately
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    
+    # Setup nvm.fish plugin for Fish
+    fish -c "fisher install jorgebucaran/nvm.fish"
+    
+    # Install latest LTS version of node
+    nvm install --lts
+    
+    # Install pnpm
+    echo "Installing pnpm..."
+    npm install -g pnpm
+fi
 
 # Install pyenv for Python version management
 echo "Installing pyenv..."
@@ -93,22 +129,6 @@ curl -sSL https://install.python-poetry.org | python3 -
 echo "Installing uv..."
 curl -sSL https://astral.sh/uv/install.sh | bash
 
-# Install nvm (Node Version Manager)
-echo "Installing nvm..."
-if [ ! -d "$HOME/.nvm" ]; then
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-    
-    # Setup nvm environment variables for Fish
-    fisher install jorgebucaran/nvm.fish
-    
-    # Install latest LTS version of node
-    nvm install --lts
-    
-    # Install pnpm
-    echo "Installing pnpm..."
-    npm install -g pnpm
-fi
-
 # Configure git
 echo "Configuring git global settings..."
 read -p "Enter your Git username: " git_username
@@ -120,11 +140,8 @@ git config --global init.defaultBranch main
 git config --global core.editor "nano"
 git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
 
-# Create Fish configuration directory if it doesn't exist
-mkdir -p ~/.config/fish/
-
-# Create Fish configuration
-echo "Setting up Fish configuration..."
+# Create final Fish configuration
+echo "Setting up final Fish configuration..."
 cat > ~/.config/fish/config.fish << 'EOL'
 # Fish configuration
 
@@ -159,7 +176,8 @@ if command -v pyenv 1>/dev/null 2>&1
 end
 
 # NVM setup
-# This is handled by the nvm.fish plugin
+set -gx NVM_DIR "$HOME/.nvm"
+# nvm.fish plugin handles the rest
 
 # pnpm setup
 set -gx PNPM_HOME "$HOME/.local/share/pnpm"
