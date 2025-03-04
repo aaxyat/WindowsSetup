@@ -1,12 +1,14 @@
 <div align="center">
 
-# 🚀 Windows 11 Setup Script Testing Environment 🚀
+# 🚀 Windows 11 and WSL Setup Script 🚀
 
-This repository contains scripts and configuration files for setting up a Windows 11 environment.
+This repository contains scripts and configuration files for setting up Windows 11 and WSL environments.
 
 </div>
 
 ---
+
+# Windows Setup
 
 ## 📡 Fetching and Executing the Setup Script 📡
 
@@ -17,6 +19,68 @@ iwr -useb l.ayushb.com/setup | iex
 ```
 
 This command uses `iwr` (an alias for `Invoke-WebRequest`) to fetch the script from the provided URL and pipes it to `iex` (an alias for `Invoke-Expression`) to execute the fetched script.
+
+# WSL Setup
+
+This repository includes a script to set up Windows Subsystem for Linux (WSL) with common developer tools and configurations.
+
+## What the WSL Setup Script Installs
+
+- apt-fast for accelerated package installation
+- Essential build tools and utilities
+- Fish shell with Oh My Fish and bira theme
+- Fisher plugin manager for Fish
+- Fastfetch (with neofetch alias) for system information
+- Git with personalized configuration
+- Python development tools:
+  - Pyenv for Python version management
+  - Poetry for Python package management
+  - uv for faster Python package installation
+- Node.js development tools:
+  - NVM (Node Version Manager with Fish support)
+  - pnpm for efficient Node package management
+- Convenient directory structure:
+  - ~/Github for GitHub repositories
+  - ~/Projects for development projects
+
+## How to Use the WSL Script
+
+To run the script directly via curl, use:
+
+```bash
+curl -fsSL https://l.ayushb.com/wsl | bash
+```
+
+### Manual Installation
+
+If you prefer to review the script before running it:
+
+1. Download the script:
+   ```bash
+   curl -O https://l.ayushb.com/wsl
+   ```
+
+2. Make it executable:
+   ```bash
+   chmod +x wsl-setup.sh
+   ```
+
+3. Run it:
+   ```bash
+   ./wsl-setup.sh
+   ```
+
+### Post-Installation
+
+After running the script:
+1. Restart your WSL terminal to apply all changes
+2. The script will have set Fish as your default shell
+3. Use the aliases `g` to quickly navigate to ~/Github and `p` to navigate to ~/Projects
+4. Run `fastfetch` or `neofetch` to see your system information
+5. Use pyenv to install Python versions: `pyenv install 3.10.0`
+6. Use Poetry for Python project management: `poetry new my-project`
+7. Use pnpm for Node.js package management: `pnpm install <package>`
+8. Use uv for faster Python package installation: `uv pip install <package>`
 
 ## 📂 Configuration Files 📂
 
