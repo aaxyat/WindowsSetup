@@ -57,7 +57,9 @@ Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -Confirm
 Install-Module -Name PSReadLine -Force -AllowClobber -Scope AllUsers -Confirm:$false 
 Write-Host "PowerShellGet and PSReadLine are installed."
 
-# Download the PowerShell profile file
+# Make UAC always ask for credentials
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 1
+
 
 # Install the profile into PowerShell 7 profile
 if ($PSVersionTable.PSVersion.Major -ge 7) {
