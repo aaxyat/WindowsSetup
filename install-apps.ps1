@@ -73,7 +73,7 @@ $wingetPackages = @(
     'Brave.Brave',
     'Rclone.Rclone',
     'WinFsp.WinFsp',
-    '7zip.7zip',
+    'M2Team.NanaZip',
     'NSSM.NSSM',
     'junegunn.fzf',
     'ajeetdsouza.zoxide',
@@ -105,12 +105,17 @@ $wingetPackages = @(
     'IPVanish.IPVanish',
     # 'SoftDeluxe.FreeDownloadManager',
     # 'spacedrive.Spacedrive',
-    # 'wez.wezterm',
+    'wez.wezterm',
     'Ferdium.Ferdium',
     'SublimeHQ.SublimeText.4',
     'Jellyfin.JellyfinMediaPlayer',
-    'IanWalton.JellyfinMPVShim'
-   #  'futo-org.Grayjay.Desktop'
+    'IanWalton.JellyfinMPVShim',
+    'futo-org.Grayjay.Desktop',
+    'Termius.Termius',
+    'XMBCFoundation.Kodi',
+    'mpv.net',
+    'Rakuten.Viber'
+
 )
 
 # Windows Store packages
@@ -119,8 +124,7 @@ $storePackages = @(
     '9P1FBSLRNM43', # BatteryTracker
     # '9PCKT2B7DZMW', # Battery Percentage icon
     # '9NM8N7DQ3Z5F', # WinDynamicDesktop
-   #  '9NKSQGP7F2NH', # Whatsapp
-    'XPFM5P5KDWF0JP', # Viber
+   '9NKSQGP7F2NH', # Whatsapp
     '9NK1GDVPX09V', #Termius
     # '9N97ZCKPD60Q', # Unigram
     # '9ncrcvjc50wl', # WinnowMail

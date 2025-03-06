@@ -84,9 +84,18 @@ Invoke-WebRequest -Uri "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFi
 
 # Copy the shortcut.exe file to shell:startup
 $shellStartup = [Environment]::GetFolderPath("Startup")
-Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shellStartup -Force
+$shortcutPath = Join-Path $shellStartup "shortcut.exe"
+Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shortcutPath -Force
 
-Write-Host "shortcut.exe file copied to shell:startup."
+# Execute shortcut.exe after copying
+try {
+    Start-Process -FilePath $shortcutPath -NoNewWindow
+    Write-Host "shortcut.exe has been started successfully."
+} catch {
+    Write-Host "Failed to start shortcut.exe: $_"
+}
+
+Write-Host "shortcut.exe file copied to shell:startup and executed."
 
 # Download the starship.toml file and install it
 $url = "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/starship.toml"
@@ -124,8 +133,21 @@ if (!(Test-Path -Path $githubFolder)) {
 }
 
 # # Install Ubuntu
-# wsl --install -d Ubuntu
+wsl --install -d Ubuntu
 
+# Add Sublime Text to PATH if it exists
+$sublimeTextPath = "C:\Program Files\Sublime Text"
+if (Test-Path -Path $sublimeTextPath) {
+    $currentPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+    if (-not ($currentPath -split ";" -contains $sublimeTextPath)) {
+        [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$sublimeTextPath", "Machine")
+        Write-Host "Added Sublime Text to system PATH."
+    } else {
+        Write-Host "Sublime Text is already in system PATH."
+    }
+} else {
+    Write-Host "Sublime Text installation not found at $sublimeTextPath. Skipping PATH update."
+}
 
 # Stop the transcript at the end of the script
 Stop-Transcript
