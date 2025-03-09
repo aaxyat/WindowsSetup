@@ -32,6 +32,66 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
  else {
     Write-Host "Chocolatey is already installed."
  }
+
+# Set WinGet downloader to WinINET
+Write-Host "Setting WinGet downloader to WinINET..."
+try {
+    $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json"
+    $settingsDir = Split-Path -Parent $settingsPath
+    
+    # Create settings directory if it doesn't exist
+    if (!(Test-Path -Path $settingsDir)) {
+        New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
+    }
+    
+    # Initialize settings object
+    $settings = $null
+
+    # Check if settings file exists
+    if (Test-Path -Path $settingsPath) {
+        $fileContent = Get-Content -Path $settingsPath -Raw -ErrorAction SilentlyContinue
+        
+        # Check if file content is not null or empty
+        if (![string]::IsNullOrWhiteSpace($fileContent)) {
+            try {
+                $settings = $fileContent | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Write-Host "Settings file contains invalid JSON. Creating a new settings object." -ForegroundColor Yellow
+                $settings = $null
+            }
+        } else {
+            Write-Host "Settings file is empty. Creating a new settings object." -ForegroundColor Yellow
+        }
+    }
+
+    # Create a new settings object if it's null
+    if ($null -eq $settings) {
+        $settings = [PSCustomObject]@{
+            network = [PSCustomObject]@{
+                downloader = "wininet"
+            }
+        }
+    } else {
+        # Ensure network property exists
+        if (-not $settings.PSObject.Properties.Match("network")) {
+            $settings | Add-Member -NotePropertyName "network" -NotePropertyValue ([PSCustomObject]@{downloader = "wininet"})
+        }
+        # Ensure downloader property exists inside network
+        if (-not $settings.network.PSObject.Properties.Match("downloader")) {
+            $settings.network | Add-Member -NotePropertyName "downloader" -NotePropertyValue "wininet"
+        } else {
+            # Update existing downloader property
+            $settings.network.downloader = "wininet"
+        }
+    }
+
+    # Save settings with proper JSON formatting
+    $settings | ConvertTo-Json -Depth 10 -Compress | Set-Content -Path $settingsPath -Encoding UTF8
+    Write-Host "WinGet downloader set to WinINET successfully." -ForegroundColor Green
+} catch {
+    Write-Host "Failed to set WinGet downloader: $_" -ForegroundColor Red
+}
+
  
  # Check if PowerShell 7 is installed using winget
  if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
@@ -51,19 +111,67 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
  }
 
- # # Install the required packages using Chocolatey
+# Install the required packages using Chocolatey
+$chocoPackages = @("python", "autohotkey", "gsudo", "qbittorrent", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "curl", "stremio")
 
-$packages = @(, "python", "autohotkey", "gsudo", "qbittorrent", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "curl", "stremio")
-$totalPackages = $packages.Count
-
-Write-Host "Installing packages using Chocolatey..."
-
-for ($i = 0; $i -lt $totalPackages; $i++) {
-   Write-Host "Installing package $($i+1)/${totalPackages}: $($packages[$i])"
-   choco install -y $($packages[$i])
+function Show-InstallationProgress {
+    param (
+        [int]$Current,
+        [int]$Total,
+        [string]$PackageName,
+        [string]$Type
+    )
+    
+    $percentComplete = [math]::Round(($Current / $Total) * 100)
+    Write-Host "[$Type] Installing ($Current/$Total): $PackageName" -ForegroundColor Cyan
+    Write-Progress -Activity "Installing $Type" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
 }
 
-Write-Host "Packages installation completed."
+function Install-Packages {
+    param (
+        [string[]]$PackageIds,
+        [string]$Type,
+        [string]$Manager = "winget"
+    )
+    
+    Write-Host "`nStarting $Type installation..." -ForegroundColor Blue
+    
+    $activePackages = ($PackageIds | Where-Object { $_ -notmatch '^\s*#' })
+    $total = $activePackages.Count
+    $current = 0
+    
+    foreach ($package in $PackageIds) {
+        if ($package -match '^\s*#') {
+            continue
+        }
+        
+        $current++
+        Show-InstallationProgress -Current $current -Total $total -PackageName $package -Type $Type
+        
+        if ($Manager -eq "winget") {
+            winget install --accept-package-agreements --id $package
+        } elseif ($Manager -eq "choco") {
+            choco install -y $package
+        }
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Successfully installed $package" -ForegroundColor Green
+        } else {
+            Write-Host "Failed to install $package" -ForegroundColor Red
+        }
+    }
+    
+    Write-Host "`n$Type installation completed.`n" -ForegroundColor Blue
+    Write-Progress -Activity "Installing $Type" -Completed
+}
+
+# Main installation process
+Clear-Host
+Write-Host "Starting package installation process..." -ForegroundColor Blue
+
+# Install Chocolatey packages
+Install-Packages -PackageIds $chocoPackages -Type "Chocolatey Applications" -Manager "choco"
+
 # Regular winget packages
 $wingetPackages = @(
     'WinDirStat.WinDirStat',
@@ -133,56 +241,6 @@ $storePackages = @(
     # '9PMHZVM588P4'  # Bluemail
 )
 
-function Show-InstallationProgress {
-    param (
-        [int]$Current,
-        [int]$Total,
-        [string]$PackageName,
-        [string]$Type
-    )
-    
-    $percentComplete = [math]::Round(($Current / $Total) * 100)
-    Write-Host "[$Type] Installing ($Current/$Total): $PackageName" -ForegroundColor Cyan
-    Write-Progress -Activity "Installing $Type" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
-}
-
-function Install-Packages {
-    param (
-        [string[]]$PackageIds,
-        [string]$Type
-    )
-    
-    Write-Host "`nStarting $Type installation..." -ForegroundColor Blue
-    
-    $activePackages = ($PackageIds | Where-Object { $_ -notmatch '^\s*#' })
-    $total = $activePackages.Count
-    $current = 0
-    
-    foreach ($package in $PackageIds) {
-        if ($package -match '^\s*#') {
-            continue
-        }
-        
-        $current++
-        Show-InstallationProgress -Current $current -Total $total -PackageName $package -Type $Type
-        
-        winget install --accept-package-agreements --id $package
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "Successfully installed $package" -ForegroundColor Green
-        } else {
-            Write-Host "Failed to install $package" -ForegroundColor Red
-        }
-    }
-    
-    Write-Host "`n$Type installation completed.`n" -ForegroundColor Blue
-    Write-Progress -Activity "Installing $Type" -Completed
-}
-
-# Main installation process
-Clear-Host
-Write-Host "Starting package installation process..." -ForegroundColor Blue
-
 # Install regular packages
 Install-Packages -PackageIds $wingetPackages -Type "Regular Applications"
 
@@ -193,4 +251,3 @@ Write-Host "All installations completed." -ForegroundColor Green
 
 
 
- 
