@@ -112,7 +112,7 @@ try {
  }
 
 # Install the required packages using Chocolatey
-$chocoPackages = @("python", "autohotkey", "gsudo", "qbittorrent", "yt-dlp", "k-litecodecpackfull", "revo-uninstaller", "adb", "firacode", "curl", "stremio")
+$chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl")
 
 function Show-InstallationProgress {
     param (
@@ -176,18 +176,23 @@ Install-Packages -PackageIds $chocoPackages -Type "Chocolatey Applications" -Man
 $wingetPackages = @(
     'WinDirStat.WinDirStat',
     'amir1376.ABDownloadManager',
+    'qBittorrent.qBittorrent',
     'Git.Git',
+    'yt-dlp.yt-dlp',
+    '7zip.7zip',
     'Starship.Starship',
     'VideoLAN.VLC',
     'Brave.Brave',
     'Rclone.Rclone',
     'WinFsp.WinFsp',
-    'M2Team.NanaZip',
+    # 'M2Team.NanaZip',
     'NSSM.NSSM',
+    'Stremio.Stremio',
     'junegunn.fzf',
     'ajeetdsouza.zoxide',
     'Notepad++.Notepad++',
     'calibre.calibre',
+    'RevoUninstaller.RevoUninstaller',
     'Amazon.SendToKindle',
     # 'Giorgiotani.Peazip',
     # 'Tonec.InternetDownloadManager',
@@ -196,6 +201,7 @@ $wingetPackages = @(
     # 'HeroicGamesLauncher.HeroicGamesLauncher',
     'Bitwarden.Bitwarden',
     'Bitwarden.CLI',
+    'CodecGuide.K-LiteCodecPack.Full',
     'JetBrains.Toolbox',
     'pCloudAG.pCloudDrive',
     'WireGuard.WireGuard',
