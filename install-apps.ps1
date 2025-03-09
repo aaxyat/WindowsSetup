@@ -67,6 +67,7 @@ Write-Host "Packages installation completed."
 # Regular winget packages
 $wingetPackages = @(
     'WinDirStat.WinDirStat',
+    'amir1376.ABDownloadManager',
     'Git.Git',
     'Starship.Starship',
     'VideoLAN.VLC',
@@ -125,7 +126,7 @@ $storePackages = @(
     # '9PCKT2B7DZMW', # Battery Percentage icon
     # '9NM8N7DQ3Z5F', # WinDynamicDesktop
    '9NKSQGP7F2NH', # Whatsapp
-    '9NK1GDVPX09V', #Termius
+    # '9NK1GDVPX09V', #Termius
     # '9N97ZCKPD60Q', # Unigram
     # '9ncrcvjc50wl', # WinnowMail
     '9n0dx20hk701' # Windows Terminal
