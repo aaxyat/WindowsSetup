@@ -66,6 +66,7 @@ curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fi
 fisher install jorgebucaran/fisher
 EOF
 fish /tmp/install_fisher.fish
+rm -f /tmp/install_fisher.fish
 
 #  Setup nvm
 echo "Setting up nvm..."
@@ -75,6 +76,7 @@ nvm install lts
 nvm use lts
 EOF
 fish /tmp/setup_nvm.fish
+rm -f /tmp/setup_nvm.fish
 
 # Install pyenv for Python version management
 echo "Installing pyenv..."
