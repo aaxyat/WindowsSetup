@@ -7,7 +7,7 @@ set -e
 
 echo "===================================================="
 echo "             WSL Setup Script                       "
-echo "                V 1.1.0                            "
+echo "                V 1.1.1                            "
 echo "===================================================="
 
 # Update packages
@@ -62,8 +62,7 @@ mkdir -p ~/.config/fish/
 
 # Install Fisher (plugin manager for Fish)
 echo "Installing Fisher plugin manager..."
-bash -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | fish"
-fish -c "fisher install jorgebucaran/fisher"
+fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
 
 #  Setup nvm
 echo "Setting up nvm..."
