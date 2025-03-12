@@ -7,7 +7,7 @@ set -e
 
 echo "===================================================="
 echo "             WSL Setup Script                       "
-echo "                V 1.1.1                            "
+echo "                V 1.2.0                             "
 echo "===================================================="
 
 # Update packages
@@ -59,16 +59,22 @@ sudo nala install -y fish
 # Create Fish configuration directory if it doesn't exist
 mkdir -p ~/.config/fish/
 
-
 # Install Fisher (plugin manager for Fish)
 echo "Installing Fisher plugin manager..."
-fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
+cat > /tmp/install_fisher.fish << 'EOF'
+curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source
+fisher install jorgebucaran/fisher
+EOF
+fish /tmp/install_fisher.fish
 
 #  Setup nvm
 echo "Setting up nvm..."
-fish -c "fisher install jorgebucaran/nvm.fish"
-fish -c "nvm install lts"
-fish -c "nvm use lts"
+cat > /tmp/setup_nvm.fish << 'EOF'
+fisher install jorgebucaran/nvm.fish
+nvm install lts
+nvm use lts
+EOF
+fish /tmp/setup_nvm.fish
 
 # Install pyenv for Python version management
 echo "Installing pyenv..."
@@ -140,7 +146,6 @@ end
 
 EOL
 
-
 # Configure ~/.bashrc to auto-launch Fish only in interactive sessions
 echo "Configuring bashrc to auto-launch Fish..."
 cat >> ~/.bashrc << 'EOL'
@@ -149,6 +154,9 @@ if [[ $- == *i* ]] && [ -z "$BASH_EXECUTION_STRING" ]; then
     exec fish
 fi
 EOL
+
+# Clean up temporary files
+rm -f /tmp/install_fisher.fish /tmp/setup_nvm.fish
 
 echo "===================================================="
 echo "            WSL Setup Script Completed              "
