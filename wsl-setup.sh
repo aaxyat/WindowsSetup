@@ -71,7 +71,8 @@ EOL
 
 # Install Fisher (plugin manager for Fish)
 echo "Installing Fisher plugin manager..."
-fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
+fish -c 'curl -sL https://git.io/fisher | source; and fisher install jorgebucaran/fisher'
+
 
 # Configure ~/.bashrc to auto-launch Fish only in interactive sessions
 echo "Configuring bashrc to auto-launch Fish..."
