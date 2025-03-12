@@ -6,7 +6,8 @@
 set -e
 
 echo "===================================================="
-echo "             WSL Setup Script Started               "
+echo "             WSL Setup Script                       "
+echo "                V 1.0.0                             "
 echo "===================================================="
 
 # Update packages
