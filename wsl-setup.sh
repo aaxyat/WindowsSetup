@@ -101,7 +101,7 @@ cat > ~/.config/fish/config.fish << 'EOL'
 
 # Set aliases
 alias ll 'ls -la'
-alias update 'sudo apt-fast update && sudo apt-fast upgrade -y'
+alias update 'sudo nala update && sudo nala upgrade -y'
 alias neofetch 'fastfetch'
 alias g 'cd ~/Github'
 alias p 'cd ~/Projects'
