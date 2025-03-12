@@ -229,8 +229,8 @@ $wingetPackages = @(
     'Termius.Termius',
     'XMBCFoundation.Kodi',
     'mpv.net',
-    'Rakuten.Viber'
-
+    'Rakuten.Viber',
+    "AdGuard.AdGuard"
 )
 
 # Windows Store packages

@@ -58,8 +58,29 @@ Install-Module -Name PSReadLine -Force -AllowClobber -Scope AllUsers -Confirm:$f
 Write-Host "PowerShellGet and PSReadLine are installed."
 
 # Make UAC always ask for credentials
+# Set UAC Consent Prompt Behavior for Admins
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 1
 
+Write-Host "UAC Prompt Changed" -ForegroundColor Green
+# Define the Brave policy registry path
+$bravePath = "HKLM:\SOFTWARE\Policies\BraveSoftware\Brave"
+
+# Ensure the registry path exists
+if (-not (Test-Path $bravePath)) {
+    New-Item -Path $bravePath -Force | Out-Null
+}
+
+# Apply Brave Browser settings
+Set-ItemProperty -Path $bravePath -Name "BraveRewardsDisabled" -Value 1 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveWalletDisabled" -Value 1 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveVPNDisabled" -Value 1 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveAIChatEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "PasswordManagerEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "HttpsUpgradesEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveAdsEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BuiltInDnsClientEnabled" -Value 1 -Type DWord
+
+Write-Host "Registry settings applied successfully!" -ForegroundColor Green
 
 # Install the profile into PowerShell 7 profile
 if ($PSVersionTable.PSVersion.Major -ge 7) {
