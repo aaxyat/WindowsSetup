@@ -70,9 +70,9 @@ if test -d "$HOME/.local/bin"
 end
 EOL
 
-# Install Fisher (plugin manager for Fish)
-echo "Installing Fisher plugin manager..."
-curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
+# # Install Fisher (plugin manager for Fish)
+# echo "Installing Fisher plugin manager..."
+# curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
 
 # Configure ~/.bashrc to auto-launch Fish only in interactive sessions
 echo "Configuring bashrc to auto-launch Fish..."
