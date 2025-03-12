@@ -59,20 +59,88 @@ sudo nala install -y fish
 # Create Fish configuration directory if it doesn't exist
 mkdir -p ~/.config/fish/
 
-# Create initial Fish configuration
-echo "Setting up initial Fish configuration..."
+
+# Install Fisher (plugin manager for Fish)
+echo "Installing Fisher plugin manager..."
+bash -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | fish"
+fish -c "fisher install jorgebucaran/fisher"
+
+#  Setup nvm
+echo "Setting up nvm..."
+fish -c "fisher install jorgebucaran/nvm.fish"
+fish -c "nvm install lts"
+fish -c "nvm use lts"
+
+# Install pyenv for Python version management
+echo "Installing pyenv..."
+curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+
+# Install Poetry for Python package management
+echo "Installing Poetry..."
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Install uv for faster Python package installation
+echo "Installing uv..."
+curl -sSL https://astral.sh/uv/install.sh | bash
+
+# Configure git
+echo "Configuring git global settings..."
+read -p "Enter your Git username: " git_username
+read -p "Enter your Git email: " git_email
+
+git config --global user.name "$git_username"
+git config --global user.email "$git_email"
+git config --global init.defaultBranch main
+git config --global core.editor "micro"
+git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
+
+# Create final Fish configuration
+echo "Setting up final Fish configuration..."
 cat > ~/.config/fish/config.fish << 'EOL'
-# Basic Fish configuration
+# Fish configuration
+
+# Set aliases
+alias ll 'ls -la'
+alias update 'sudo apt-fast update && sudo apt-fast upgrade -y'
+alias neofetch 'fastfetch'
+alias g 'cd ~/Github'
+alias p 'cd ~/Projects'
 
 # Add local bin to path
 if test -d "$HOME/.local/bin"
     set -gx PATH $HOME/.local/bin $PATH
 end
+
+# Poetry setup
+if test -d "$HOME/.poetry/bin"
+    set -gx PATH $HOME/.poetry/bin $PATH
+end
+
+# uv setup
+if test -d "$HOME/.cargo/bin"
+    set -gx PATH $HOME/.cargo/bin $PATH
+end
+
+# Pyenv setup
+set -x PYENV_ROOT $HOME/.pyenv
+set -x PATH $PYENV_ROOT/bin $PATH
+if command -v pyenv 1>/dev/null 2>&1
+    status is-login; and pyenv init --path | source
+    pyenv init - | source
+end
+
+# NVM setup
+set -gx NVM_DIR "$HOME/.nvm"
+# nvm.fish plugin handles the rest
+
+# pnpm setup
+set -gx PNPM_HOME "$HOME/.local/share/pnpm"
+if not string match -q -- $PNPM_HOME $PATH
+    set -gx PATH "$PNPM_HOME" $PATH
+end
+
 EOL
 
-# # Install Fisher (plugin manager for Fish)
-# echo "Installing Fisher plugin manager..."
-# curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
 
 # Configure ~/.bashrc to auto-launch Fish only in interactive sessions
 echo "Configuring bashrc to auto-launch Fish..."
