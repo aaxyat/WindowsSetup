@@ -13,17 +13,17 @@ echo "===================================================="
 echo "Updating packages..."
 sudo apt update
 
-# Install apt-fast for faster package installation
-echo "Installing apt-fast..."
-/bin/bash -c "$(curl -sL https://git.io/vokNn)"
+# Install nala for faster apt package installation
+echo "Installing nala for faster apt package installation..."
+curl https://gitlab.com/volian/volian-archive/-/raw/main/install-nala.sh | bash
 
-# Upgrade packages using apt-fast
-echo "Upgrading packages using apt-fast..."
-sudo apt-fast upgrade -y
+# Upgrade packages using nala
+echo "Upgrading packages using nala..."
+sudo nala upgrade -y
 
 # Install essential packages
 echo "Installing essential packages..."
-sudo apt-fast install -y \
+sudo nala install -y \
 build-essential \
 curl \
 git \
@@ -44,23 +44,24 @@ tk-dev \
 libxml2-dev \
 libxmlsec1-dev \
 libffi-dev \
-liblzma-dev
+liblzma-dev \
+micro
 
 # Create common directories
 echo "Creating common directories..."
 mkdir -p ~/Github ~/Projects
 
-# Install fastfetch (a faster alternative to neofetch)
-echo "Installing fastfetch..."
-sudo apt-fast install -y cmake
-git clone https://github.com/LinusDierheimer/fastfetch.git /tmp/fastfetch
-cd /tmp/fastfetch
-mkdir -p build
-cd build
-cmake ..
-cmake --build . --target fastfetch --target flashfetch
-sudo cmake --install .
-cd ~
+# # Install fastfetch (a faster alternative to neofetch)
+# echo "Installing fastfetch..."
+# sudo apt-fast install -y cmake
+# git clone https://github.com/LinusDierheimer/fastfetch.git /tmp/fastfetch
+# cd /tmp/fastfetch
+# mkdir -p build
+# cd build
+# cmake ..
+# cmake --build . --target fastfetch --target flashfetch
+# sudo cmake --install .
+# cd ~
 
 # Install and setup Fish shell
 echo "Setting up Fish shell..."
@@ -80,17 +81,6 @@ if test -d "$HOME/.local/bin"
     set -gx PATH $HOME/.local/bin $PATH
 end
 EOL
-
-# Install Oh My Fish
-echo "Installing Oh My Fish..."
-fish -c "curl -L https://get.oh-my.fish | fish"
-
-# Install bira theme for Fish
-echo "Installing bira theme for Fish..."
-fish -c "omf install bira"
-
-# Set bira as default theme
-fish -c "omf theme bira"
 
 # Install Fisher (plugin manager for Fish)
 echo "Installing Fisher plugin manager..."
@@ -185,10 +175,6 @@ if not string match -q -- $PNPM_HOME $PATH
     set -gx PATH "$PNPM_HOME" $PATH
 end
 
-# Display fastfetch on startup
-if type -q fastfetch
-    fastfetch
-end
 EOL
 
 # Set Fish as the default shell
