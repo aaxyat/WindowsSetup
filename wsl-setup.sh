@@ -7,7 +7,7 @@ set -e
 
 echo "===================================================="
 echo "             WSL Setup Script                       "
-echo "                V 1.2.0                             "
+echo "                V 1.1.2                            "
 echo "===================================================="
 
 # Update packages
@@ -52,31 +52,44 @@ micro
 echo "Creating common directories..."
 mkdir -p ~/Github ~/Projects
 
-# Install and setup Fish shell
-echo "Setting up Fish shell..."
-sudo nala install -y fish
-
 # Create Fish configuration directory if it doesn't exist
 mkdir -p ~/.config/fish/
 
-# Install Fisher (plugin manager for Fish)
+# Install Fisher (plugin manager for Fish) - Different approach
 echo "Installing Fisher plugin manager..."
-cat > /tmp/install_fisher.fish << 'EOF'
-curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source
-fisher install jorgebucaran/fisher
-EOF
-fish /tmp/install_fisher.fish
-rm -f /tmp/install_fisher.fish
+# Download Fisher directly to the Fish functions directory
+curl -sL https://git.io/fisher --create-dirs -o ~/.config/fish/functions/fisher.fish
 
-#  Setup nvm
-echo "Setting up nvm..."
-cat > /tmp/setup_nvm.fish << 'EOF'
+# Create a fish script to initialize and run Fisher
+cat > /tmp/fisher_init.fish << 'EOF'
+# Set fish_function_path if needed
+set -q fish_function_path[1]; or set -U fish_function_path ~/.config/fish/functions
+# Source fisher function manually
+source ~/.config/fish/functions/fisher.fish
+# Install fisher itself to manage completion, etc.
+fisher install jorgebucaran/fisher
+# Install nvm
 fisher install jorgebucaran/nvm.fish
-nvm install lts
-nvm use lts
 EOF
-fish /tmp/setup_nvm.fish
-rm -f /tmp/setup_nvm.fish
+
+# Run the fish script with explicit error handling
+fish /tmp/fisher_init.fish || echo "Fisher installation failed, but continuing with setup..."
+
+# Create NVM setup script
+echo "Setting up nvm..."
+cat > /tmp/nvm_setup.fish << 'EOF'
+# Make sure nvm.fish is available
+if functions -q nvm
+  echo "Installing Node LTS version..."
+  nvm install lts
+  nvm use lts
+else
+  echo "NVM installation not available, skipping Node setup"
+fi
+EOF
+
+# Run the NVM setup script
+fish /tmp/nvm_setup.fish || echo "NVM setup failed, but continuing with setup..."
 
 # Install pyenv for Python version management
 echo "Installing pyenv..."
@@ -158,7 +171,7 @@ fi
 EOL
 
 # Clean up temporary files
-rm -f /tmp/install_fisher.fish /tmp/setup_nvm.fish
+rm -f /tmp/fisher_init.fish /tmp/nvm_setup.fish
 
 echo "===================================================="
 echo "            WSL Setup Script Completed              "
