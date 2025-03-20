@@ -111,6 +111,28 @@ try {
     exit
  }
 
+#  Setup Brave Registry Keys
+# Define the Brave policy registry path
+$bravePath = "HKLM:\SOFTWARE\Policies\BraveSoftware\Brave"
+
+# Ensure the registry path exists
+if (-not (Test-Path $bravePath)) {
+    New-Item -Path $bravePath -Force | Out-Null
+}
+
+# Apply Brave Browser settings
+Set-ItemProperty -Path $bravePath -Name "BraveRewardsDisabled" -Value 1 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveWalletDisabled" -Value 1 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveVPNDisabled" -Value 1 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveAIChatEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "PasswordManagerEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "HttpsUpgradesEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BraveAdsEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path $bravePath -Name "BuiltInDnsClientEnabled" -Value 1 -Type DWord
+
+Write-Host "Brave Registry settings applied successfully!" -ForegroundColor Green
+
+
 # Install the required packages using Chocolatey
 $chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl")
 
@@ -174,6 +196,9 @@ Install-Packages -PackageIds $chocoPackages -Type "Chocolatey Applications" -Man
 
 # Regular winget packages
 $wingetPackages = @(
+    'Brave.Brave',
+    'Bitwarden.Bitwarden',
+    'Bitwarden.CLI',
     'WinDirStat.WinDirStat',
     'amir1376.ABDownloadManager',
     'qBittorrent.qBittorrent',
@@ -182,7 +207,6 @@ $wingetPackages = @(
     '7zip.7zip',
     'Starship.Starship',
     'VideoLAN.VLC',
-    'Brave.Brave',
     'Rclone.Rclone',
     'WinFsp.WinFsp',
     # 'M2Team.NanaZip',
@@ -199,8 +223,6 @@ $wingetPackages = @(
     'StartIsBack.StartAllBack',
     'AppWork.JDownloader',
     # 'HeroicGamesLauncher.HeroicGamesLauncher',
-    'Bitwarden.Bitwarden',
-    'Bitwarden.CLI',
     'CodecGuide.K-LiteCodecPack.Full',
     'JetBrains.Toolbox',
     'pCloudAG.pCloudDrive',
@@ -225,12 +247,14 @@ $wingetPackages = @(
     'SublimeHQ.SublimeText.4',
     'Jellyfin.JellyfinMediaPlayer',
     'IanWalton.JellyfinMPVShim',
-    'futo-org.Grayjay.Desktop',
     'Termius.Termius',
     'XMBCFoundation.Kodi',
     'mpv.net',
     'Rakuten.Viber',
-    "AdGuard.AdGuard"
+    "AdGuard.AdGuard",
+    "Hugo.Hugo.Extended",
+    "Genymobile.scrcpy",
+    "Microsoft.Sysinternals.ProcessMonitor"
 )
 
 # Windows Store packages
