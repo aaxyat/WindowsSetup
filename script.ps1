@@ -57,11 +57,17 @@ Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -Confirm
 Install-Module -Name PSReadLine -Force -AllowClobber -Scope AllUsers -Confirm:$false 
 Write-Host "PowerShellGet and PSReadLine are installed."
 
-# Make UAC always ask for credentials
-# Set UAC Consent Prompt Behavior for Admins
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 1
+$confirmation = Read-Host "Do you want to change the UAC settings? (Yes/No) [Yes]"
 
-Write-Host "UAC Prompt Changed" -ForegroundColor Green
+if ($confirmation -eq "" -or $confirmation -eq "Yes") {
+    # Set UAC Consent Prompt Behavior for Admins
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 1
+
+    Write-Host "UAC Prompt Changed" -ForegroundColor Green
+} else {
+    Write-Host "No changes were made to UAC settings." -ForegroundColor Red
+}
+
 
 # Install the profile into PowerShell 7 profile
 if ($PSVersionTable.PSVersion.Major -ge 7) {
