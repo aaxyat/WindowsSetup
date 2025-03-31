@@ -174,6 +174,16 @@ function grep($regex, $dir) {
         $input | select-string $regex
 }
 
+# Function to open Kali WSL
+function kali {
+        wsl -d kali-linux
+}
+    
+    # Function to open Ubuntu WSL
+function ubuntu {
+        wsl -d Ubuntu
+}
+    
 
 function mas {
         Invoke-RestMethod https://get.activated.win | Invoke-Expression
@@ -393,6 +403,8 @@ function s {
         'betterbrave'   = @{desc = 'Run BetterBrave script for Brave Browser setup and optimization'; usage = 'betterbrave'; color = 'Red'}
         'Set-DoH'       = @{desc = 'Configure Cloudflare DNS over HTTPS with IPv4 and IPv6 support (requires admin)'; usage = 'Set-DoH'; color = 'Cyan'}
         'doh'           = @{desc = 'Configure Cloudflare DNS over HTTPS with IPv4 and IPv6 support (requires admin)'; usage = 'doh'; color = 'Cyan'}
+        'kali'          = @{desc = 'Open Kali Linux WSL instance'; usage = 'kali'; color = 'Cyan'}
+        'ubuntu'        = @{desc = 'Open Ubuntu WSL instance'; usage = 'ubuntu'; color = 'Cyan'}
     }
 
     if ($command) {
