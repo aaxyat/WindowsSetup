@@ -140,6 +140,12 @@ if (!(Test-Path -Path $githubFolder)) {
    New-Item -ItemType Directory -Force -Path $githubFolder
 }
 
+# Create The Projects Folder
+$projectsFolder = Join-Path $HOME\Documents "Projects"
+if (!(Test-Path -Path $projectsFolder)) {
+   New-Item -ItemType Directory -Force -Path $projectsFolder
+}
+
 # # Install Ubuntu
 wsl --install -d Ubuntu
 
@@ -156,6 +162,9 @@ if (Test-Path -Path $sublimeTextPath) {
 } else {
     Write-Host "Sublime Text installation not found at $sublimeTextPath. Skipping PATH update."
 }
+
+# Install UV
+Invoke-Webrequest https://astral.sh/uv/install.ps1 | Invoke-Expression
 
 # Stop the transcript at the end of the script
 Stop-Transcript
