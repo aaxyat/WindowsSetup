@@ -132,6 +132,36 @@ Set-ItemProperty -Path $bravePath -Name "BuiltInDnsClientEnabled" -Value 1 -Type
 
 Write-Host "Brave Registry settings applied successfully!" -ForegroundColor Green
 
+# Copy AHK Script and execute it 
+# Download the shortcut.exe file
+Invoke-WebRequest -Uri "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/shortcuts.exe" -OutFile "$env:TEMP\shortcut.exe"
+
+# Copy the shortcut.exe file to shell:startup
+$shellStartup = [Environment]::GetFolderPath("Startup")
+$shortcutPath = Join-Path $shellStartup "shortcut.exe"
+Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shortcutPath -Force
+
+# Execute shortcut.exe after copying
+try {
+    Start-Process -FilePath $shortcutPath -NoNewWindow
+    Write-Host "shortcut.exe has been started successfully."
+} catch {
+    Write-Host "Failed to start shortcut.exe: $_"
+}
+
+Write-Host "shortcut.exe file copied to shell:startup and executed."
+
+# Create the Github folder if it doesn't exist
+$githubFolder = Join-Path $HOME\Documents "Github"
+if (!(Test-Path -Path $githubFolder)) {
+   New-Item -ItemType Directory -Force -Path $githubFolder
+}
+
+# Create The Projects Folder
+$projectsFolder = Join-Path $HOME\Documents "Projects"
+if (!(Test-Path -Path $projectsFolder)) {
+   New-Item -ItemType Directory -Force -Path $projectsFolder
+}
 
 # Install the required packages using Chocolatey
 $chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl")
