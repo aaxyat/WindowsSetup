@@ -226,6 +226,7 @@ Install-Packages -PackageIds $chocoPackages -Type "Chocolatey Applications" -Man
 
 # Regular winget packages
 $wingetPackages = @(
+    'WireGuard.WireGuard',
     'Brave.Brave',
     'Bitwarden.Bitwarden',
     'Bitwarden.CLI',
@@ -256,7 +257,6 @@ $wingetPackages = @(
     'CodecGuide.K-LiteCodecPack.Full',
     'JetBrains.Toolbox',
     'pCloudAG.pCloudDrive',
-    'WireGuard.WireGuard',
     'Mozilla.Firefox',
     'GitHub.GitHubDesktop',
     'tailscale.tailscale',
@@ -272,7 +272,7 @@ $wingetPackages = @(
     'IPVanish.IPVanish',
     # 'SoftDeluxe.FreeDownloadManager',
     # 'spacedrive.Spacedrive',
-    'wez.wezterm',
+    # 'wez.wezterm',
     'Ferdium.Ferdium',
     'SublimeHQ.SublimeText.4',
     'Jellyfin.JellyfinMediaPlayer',
@@ -284,7 +284,8 @@ $wingetPackages = @(
     "AdGuard.AdGuard",
     "Hugo.Hugo.Extended",
     "Genymobile.scrcpy",
-    "Microsoft.Sysinternals.ProcessMonitor"
+    "Microsoft.Sysinternals.ProcessMonitor",
+    "EpicGames.EpicGamesLauncher "
 )
 
 # Windows Store packages
