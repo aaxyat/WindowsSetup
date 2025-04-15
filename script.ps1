@@ -117,7 +117,7 @@ Start-Process -FilePath $officeInstallerPath -Wait
 Write-Host "Office installation completed."
 
 # # Install Ubuntu
-wsl --install -d Ubuntu
+wsl --install
 
 # Add Sublime Text to PATH if it exists
 $sublimeTextPath = "C:\Program Files\Sublime Text"
