@@ -1,40 +1,176 @@
 # Check if the script is running as administrator
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "You need to run this script as administrator."
+    Write-Host "You need to run this script as administrator." -ForegroundColor Red
     pause
     exit
- }
- 
- # Define the log file path
- $logDir = "$HOME\Documents\logs"
- $logFile = "$logDir\apps-setup.log"
- 
- 
- # Create the logs directory if it doesn't exist
- if (!(Test-Path -Path $logDir)) {
-    New-Item -ItemType Directory -Force -Path $logDir
- }
- 
- # Start the transcript
- Start-Transcript -Path $logFile -Append
- 
- 
- # Set the global execution policy to unrestricted
- Set-ExecutionPolicy Unrestricted -Scope LocalMachine -Force
- 
- # Check if Chocolatey is installed
- if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-    # Install Chocolatey
+}
+
+# Beautiful UI Functions
+function Show-Banner {
+    Clear-Host
+    $banner = @"
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                    🚀 WINDOWS SYSTEM SETUP INSTALLER 🚀                     ║
+║                                                                              ║
+║                      Automated Package Installation                          ║
+║                           & System Configuration                             ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+"@
+    Write-Host $banner -ForegroundColor Cyan
+    Write-Host ""
+}
+
+function Show-Section {
+    param([string]$Title, [string]$Icon = "🔧")
+    Write-Host ""
+    Write-Host "┌─" -NoNewline -ForegroundColor DarkGray
+    Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
+    Write-Host "─┐" -ForegroundColor DarkGray
+    Write-Host "│  $Icon $Title  │" -ForegroundColor Yellow
+    Write-Host "└─" -NoNewline -ForegroundColor DarkGray
+    Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
+    Write-Host "─┘" -ForegroundColor DarkGray
+    Write-Host ""
+}
+
+function Show-Status {
+    param(
+        [string]$Message,
+        [string]$Status = "Info",
+        [switch]$NoNewline
+    )
+    
+    $icons = @{
+        "Success" = "✅"
+        "Error"   = "❌"
+        "Warning" = "⚠️"
+        "Info"    = "ℹ️"
+        "Progress" = "⏳"
+        "Done"    = "✨"
+    }
+    
+    $colors = @{
+        "Success" = "Green"
+        "Error"   = "Red"
+        "Warning" = "Yellow"
+        "Info"    = "Cyan"
+        "Progress" = "Magenta"
+        "Done"    = "Green"
+    }
+    
+    $icon = $icons[$Status]
+    $color = $colors[$Status]
+    
+    if ($NoNewline) {
+        Write-Host "$icon $Message" -ForegroundColor $color -NoNewline
+    } else {
+        Write-Host "$icon $Message" -ForegroundColor $color
+    }
+}
+
+function Show-InstallationProgress {
+    param (
+        [int]$Current,
+        [int]$Total,
+        [string]$PackageName,
+        [string]$Type,
+        [string]$Status = "Installing"
+    )
+    
+    $percentComplete = [math]::Round(($Current / $Total) * 100)
+    $progressBar = Create-ProgressBar -Percent $percentComplete -Width 50
+    
+    Write-Host ""
+    Write-Host "  📦 Package: " -NoNewline -ForegroundColor Cyan
+    Write-Host $PackageName -ForegroundColor White
+    Write-Host "  📊 Progress: " -NoNewline -ForegroundColor Cyan
+    Write-Host "($Current/$Total) " -NoNewline -ForegroundColor Yellow
+    Write-Host "$percentComplete%" -ForegroundColor Green
+    Write-Host "  $progressBar" -ForegroundColor Blue
+    Write-Host ""
+    
+    Write-Progress -Activity "Installing $Type" -Status "$Status $PackageName" -PercentComplete $percentComplete
+}
+
+function Create-ProgressBar {
+    param(
+        [int]$Percent,
+        [int]$Width = 50
+    )
+    
+    $filled = [math]::Floor($Width * $Percent / 100)
+    $empty = $Width - $filled
+    
+    $bar = "█" * $filled + "░" * $empty
+    return "[$bar] $Percent%"
+}
+
+function Show-Summary {
+    param(
+        [int]$Successful,
+        [int]$Failed,
+        [int]$Total
+    )
+    
+    Write-Host ""
+    Write-Host "╔═══════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║           INSTALLATION SUMMARY        ║" -ForegroundColor Cyan
+    Write-Host "╠═══════════════════════════════════════╣" -ForegroundColor Cyan
+    Write-Host "║  Total Packages: " -NoNewline -ForegroundColor Cyan
+    Write-Host ("{0,-19}" -f $Total) -NoNewline -ForegroundColor White
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "║  Successful: " -NoNewline -ForegroundColor Cyan
+    Write-Host ("{0,-23}" -f $Successful) -NoNewline -ForegroundColor Green
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "║  Failed: " -NoNewline -ForegroundColor Cyan
+    Write-Host ("{0,-27}" -f $Failed) -NoNewline -ForegroundColor Red
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "╚═══════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+}
+
+# Initialize
+Show-Banner
+
+# Define the log file path
+Show-Section "System Initialization" "🔧"
+$logDir = "$HOME\Documents\logs"
+$logFile = "$logDir\apps-setup.log"
+
+# Create the logs directory if it doesn't exist
+if (!(Test-Path -Path $logDir)) {
+    Show-Status "Creating logs directory..." "Progress"
+    New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+    Show-Status "Logs directory created successfully" "Success"
+} else {
+    Show-Status "Logs directory already exists" "Info"
+}
+
+# Start the transcript
+Start-Transcript -Path $logFile -Append
+Show-Status "Logging started: $logFile" "Success"
+
+# Set the global execution policy to unrestricted
+Show-Status "Setting execution policy..." "Progress"
+Set-ExecutionPolicy Unrestricted -Scope LocalMachine -Force
+Show-Status "Execution policy set to Unrestricted" "Success"
+
+# Check if Chocolatey is installed
+Show-Section "Package Manager Setup" "📦"
+if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+    Show-Status "Installing Chocolatey..." "Progress"
     Set-ExecutionPolicy Bypass -Scope Process -Force
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-    Write-Host "Chocolatey is installed."
- }
- else {
-    Write-Host "Chocolatey is already installed."
- }
+    Show-Status "Chocolatey installed successfully" "Success"
+} else {
+    Show-Status "Chocolatey is already installed" "Info"
+}
 
 # Set WinGet downloader to WinINET
-Write-Host "Setting WinGet downloader to WinINET..."
+Show-Section "WinGet Configuration" "⚙️"
+Show-Status "Configuring WinGet downloader..." "Progress"
 try {
     $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json"
     $settingsDir = Split-Path -Parent $settingsPath
@@ -56,11 +192,11 @@ try {
             try {
                 $settings = $fileContent | ConvertFrom-Json -ErrorAction Stop
             } catch {
-                Write-Host "Settings file contains invalid JSON. Creating a new settings object." -ForegroundColor Yellow
+                Show-Status "Settings file contains invalid JSON, creating new one" "Warning"
                 $settings = $null
             }
         } else {
-            Write-Host "Settings file is empty. Creating a new settings object." -ForegroundColor Yellow
+            Show-Status "Settings file is empty, creating new one" "Warning"
         }
     }
 
@@ -87,32 +223,31 @@ try {
 
     # Save settings with proper JSON formatting
     $settings | ConvertTo-Json -Depth 10 -Compress | Set-Content -Path $settingsPath -Encoding UTF8
-    Write-Host "WinGet downloader set to WinINET successfully." -ForegroundColor Green
+    Show-Status "WinGet downloader configured successfully" "Success"
 } catch {
-    Write-Host "Failed to set WinGet downloader: $_" -ForegroundColor Red
+    Show-Status "Failed to configure WinGet downloader: $_" "Error"
 }
 
- 
- # Check if PowerShell 7 is installed using winget
- if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
-    # Install PowerShell 7 using winget
-    Write-Host "PowerShell 7 is not installed. Installing PowerShell 7..."
-    winget install  --accept-source-agreements --accept-package-agreements -e --id Microsoft.PowerShell 
-    Write-Host "PowerShell 7 is installed."
- }
- else {
-    Write-Host "PowerShell 7 is already installed."
- }
- 
- # Check if the shell used to execute the script is not PowerShell 7
- if ($PSVersionTable.PSVersion.Major -lt 7) {
-    Write-Host "You need to use PowerShell 7 to execute this script."
+# Check if PowerShell 7 is installed using winget
+Show-Section "PowerShell 7 Setup" "💻"
+if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+    Show-Status "Installing PowerShell 7..." "Progress"
+    winget install --accept-source-agreements --accept-package-agreements -e --id Microsoft.PowerShell 
+    Show-Status "PowerShell 7 installed successfully" "Success"
+} else {
+    Show-Status "PowerShell 7 is already installed" "Info"
+}
+
+# Check if the shell used to execute the script is not PowerShell 7
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Show-Status "PowerShell 7 is required to continue" "Error"
     pause
     exit
- }
+}
 
-#  Setup Brave Registry Keys
-# Define the Brave policy registry path
+# Setup Brave Registry Keys
+Show-Section "Browser Configuration" "🌐"
+Show-Status "Configuring Brave Browser settings..." "Progress"
 $bravePath = "HKLM:\SOFTWARE\Policies\BraveSoftware\Brave"
 
 # Ensure the registry path exists
@@ -121,64 +256,56 @@ if (-not (Test-Path $bravePath)) {
 }
 
 # Apply Brave Browser settings
-Set-ItemProperty -Path $bravePath -Name "BraveRewardsDisabled" -Value 1 -Type DWord
-Set-ItemProperty -Path $bravePath -Name "BraveWalletDisabled" -Value 1 -Type DWord
-Set-ItemProperty -Path $bravePath -Name "BraveVPNDisabled" -Value 1 -Type DWord
-Set-ItemProperty -Path $bravePath -Name "BraveAIChatEnabled" -Value 0 -Type DWord
-Set-ItemProperty -Path $bravePath -Name "PasswordManagerEnabled" -Value 0 -Type DWord
-Set-ItemProperty -Path $bravePath -Name "HttpsUpgradesEnabled" -Value 0 -Type DWord
-Set-ItemProperty -Path $bravePath -Name "BraveAdsEnabled" -Value 0 -Type DWord
-Set-ItemProperty -Path $bravePath -Name "BuiltInDnsClientEnabled" -Value 1 -Type DWord
+$braveSettings = @{
+    "BraveRewardsDisabled" = 1
+    "BraveWalletDisabled" = 1
+    "BraveVPNDisabled" = 1
+    "BraveAIChatEnabled" = 0
+    "PasswordManagerEnabled" = 0
+    "HttpsUpgradesEnabled" = 0
+    "BraveAdsEnabled" = 0
+    "BuiltInDnsClientEnabled" = 1
+}
 
-Write-Host "Brave Registry settings applied successfully!" -ForegroundColor Green
+foreach ($setting in $braveSettings.GetEnumerator()) {
+    Set-ItemProperty -Path $bravePath -Name $setting.Key -Value $setting.Value -Type DWord
+}
+Show-Status "Brave Browser configured successfully" "Success"
 
 # Copy AHK Script and execute it 
-# Download the shortcut.exe file
-Invoke-WebRequest -Uri "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/shortcuts.exe" -OutFile "$env:TEMP\shortcut.exe"
-
-# Copy the shortcut.exe file to shell:startup
-$shellStartup = [Environment]::GetFolderPath("Startup")
-$shortcutPath = Join-Path $shellStartup "shortcut.exe"
-Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shortcutPath -Force
-
-# Execute shortcut.exe after copying
+Show-Section "Utility Setup" "🔧"
+Show-Status "Setting up shortcuts utility..." "Progress"
 try {
-    Start-Process -FilePath $shortcutPath -NoNewWindow
-    Write-Host "shortcut.exe has been started successfully."
-} catch {
-    Write-Host "Failed to start shortcut.exe: $_"
-}
-
-Write-Host "shortcut.exe file copied to shell:startup and executed."
-
-# Create the Github folder if it doesn't exist
-$githubFolder = Join-Path $HOME\Documents "Github"
-if (!(Test-Path -Path $githubFolder)) {
-   New-Item -ItemType Directory -Force -Path $githubFolder
-}
-
-# Create The Projects Folder
-$projectsFolder = Join-Path $HOME\Documents "Projects"
-if (!(Test-Path -Path $projectsFolder)) {
-   New-Item -ItemType Directory -Force -Path $projectsFolder
-}
-
-# Install the required packages using Chocolatey
-$chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl")
-
-function Show-InstallationProgress {
-    param (
-        [int]$Current,
-        [int]$Total,
-        [string]$PackageName,
-        [string]$Type
-    )
+    Invoke-WebRequest -Uri "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/shortcuts.exe" -OutFile "$env:TEMP\shortcut.exe"
     
-    $percentComplete = [math]::Round(($Current / $Total) * 100)
-    Write-Host "[$Type] Installing ($Current/$Total): $PackageName" -ForegroundColor Cyan
-    Write-Progress -Activity "Installing $Type" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
+    $shellStartup = [Environment]::GetFolderPath("Startup")
+    $shortcutPath = Join-Path $shellStartup "shortcut.exe"
+    Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shortcutPath -Force
+    
+    Start-Process -FilePath $shortcutPath -NoNewWindow
+    Show-Status "Shortcuts utility configured successfully" "Success"
+} catch {
+    Show-Status "Failed to setup shortcuts utility: $_" "Error"
 }
 
+# Create directories
+Show-Section "Directory Setup" "📁"
+$directories = @{
+    "Github" = Join-Path $HOME\Documents "Github"
+    "Projects" = Join-Path $HOME\Documents "Projects"
+}
+
+foreach ($dir in $directories.GetEnumerator()) {
+    if (!(Test-Path -Path $dir.Value)) {
+        Show-Status "Creating $($dir.Key) directory..." "Progress"
+        New-Item -ItemType Directory -Force -Path $dir.Value | Out-Null
+        Show-Status "$($dir.Key) directory created" "Success"
+    } else {
+        Show-Status "$($dir.Key) directory already exists" "Info"
+    }
+}
+
+# Enhanced Package Installation Function
 function Install-Packages {
     param (
         [string[]]$PackageIds,
@@ -186,11 +313,15 @@ function Install-Packages {
         [string]$Manager = "winget"
     )
     
-    Write-Host "`nStarting $Type installation..." -ForegroundColor Blue
+    Show-Section "$Type Installation" "📦"
     
     $activePackages = ($PackageIds | Where-Object { $_ -notmatch '^\s*#' })
     $total = $activePackages.Count
     $current = 0
+    $successful = 0
+    $failed = 0
+    
+    Show-Status "Starting installation of $total packages..." "Info"
     
     foreach ($package in $PackageIds) {
         if ($package -match '^\s*#') {
@@ -200,31 +331,33 @@ function Install-Packages {
         $current++
         Show-InstallationProgress -Current $current -Total $total -PackageName $package -Type $Type
         
-        if ($Manager -eq "winget") {
-            winget install --accept-package-agreements --id $package
-        } elseif ($Manager -eq "choco") {
-            choco install -y $package
-        }
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "Successfully installed $package" -ForegroundColor Green
-        } else {
-            Write-Host "Failed to install $package" -ForegroundColor Red
+        try {
+            if ($Manager -eq "winget") {
+                $result = winget install --accept-package-agreements --id $package 2>&1
+            } elseif ($Manager -eq "choco") {
+                $result = choco install -y $package 2>&1
+            }
+            
+            if ($LASTEXITCODE -eq 0) {
+                Show-Status "✅ $package installed successfully" "Success"
+                $successful++
+            } else {
+                Show-Status "❌ Failed to install $package" "Error"
+                $failed++
+            }
+        } catch {
+            Show-Status "❌ Error installing $package`: $_" "Error"
+            $failed++
         }
     }
     
-    Write-Host "`n$Type installation completed.`n" -ForegroundColor Blue
     Write-Progress -Activity "Installing $Type" -Completed
+    Show-Summary -Successful $successful -Failed $failed -Total $total
 }
 
-# Main installation process
-Clear-Host
-Write-Host "Starting package installation process..." -ForegroundColor Blue
+# Package Lists
+$chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl")
 
-# Install Chocolatey packages
-Install-Packages -PackageIds $chocoPackages -Type "Chocolatey Applications" -Manager "choco"
-
-# Regular winget packages
 $wingetPackages = @(
     'WireGuard.WireGuard',
     'Brave.Brave',
@@ -240,7 +373,6 @@ $wingetPackages = @(
     'VideoLAN.VLC',
     'Rclone.Rclone',
     'WinFsp.WinFsp',
-    # 'M2Team.NanaZip',
     'NSSM.NSSM',
     'Stremio.Stremio',
     'junegunn.fzf',
@@ -249,20 +381,15 @@ $wingetPackages = @(
     'calibre.calibre',
     'RevoUninstaller.RevoUninstaller',
     'Amazon.SendToKindle',
-    # 'Giorgiotani.Peazip',
-    # 'Tonec.InternetDownloadManager',
     'StartIsBack.StartAllBack',
     'AppWork.JDownloader',
-    # 'HeroicGamesLauncher.HeroicGamesLauncher',
     'CodecGuide.K-LiteCodecPack.Full',
     'JetBrains.Toolbox',
     'pCloudAG.pCloudDrive',
     'Mozilla.Firefox',
     'GitHub.GitHubDesktop',
     'tailscale.tailscale',
-    # 'Axosoft.GitKraken',
     'TechNobo.TcNoAccountSwitcher',
-    # 'hluk.CopyQ',
     'Valve.Steam',
     'Microsoft.PowerToys',
     'voidtools.Everything',
@@ -270,9 +397,6 @@ $wingetPackages = @(
     'RadolynLabs.AyuGramDesktop',
     'Microsoft.VisualStudioCode',
     'IPVanish.IPVanish',
-    # 'SoftDeluxe.FreeDownloadManager',
-    # 'spacedrive.Spacedrive',
-    # 'wez.wezterm',
     'Ferdium.Ferdium',
     'SublimeHQ.SublimeText.4',
     'Jellyfin.JellyfinMediaPlayer',
@@ -285,30 +409,36 @@ $wingetPackages = @(
     "Hugo.Hugo.Extended",
     "Genymobile.scrcpy",
     "Microsoft.Sysinternals.ProcessMonitor",
-    "EpicGames.EpicGamesLauncher "
+    "EpicGames.EpicGamesLauncher",
+    "MarkText.MarkText"
 )
 
-# Windows Store packages
 $storePackages = @(
     '9P92N00QV14J', # HP Command Center
     '9P1FBSLRNM43', # BatteryTracker
-    # '9PCKT2B7DZMW', # Battery Percentage icon
-    # '9NM8N7DQ3Z5F', # WinDynamicDesktop
-   '9NKSQGP7F2NH', # Whatsapp
-    # '9NK1GDVPX09V', #Termius
-    # '9N97ZCKPD60Q', # Unigram
-    # '9ncrcvjc50wl', # WinnowMail
+    '9NKSQGP7F2NH', # Whatsapp
     '9n0dx20hk701' # Windows Terminal
-    # '9PMHZVM588P4'  # Bluemail
 )
 
-# Install regular packages
+# Execute installations
+Install-Packages -PackageIds $chocoPackages -Type "Chocolatey Applications" -Manager "choco"
 Install-Packages -PackageIds $wingetPackages -Type "Regular Applications"
-
-# Install Store packages
 Install-Packages -PackageIds $storePackages -Type "Microsoft Store Applications"
 
-Write-Host "All installations completed." -ForegroundColor Green
+# Final completion message
+Show-Section "Installation Complete" "🎉"
+Show-Status "All installations have been completed!" "Done"
+Show-Status "Check the log file for detailed information: $logFile" "Info"
 
+Write-Host ""
+Write-Host "╔══════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor Green
+Write-Host "║                                                                              ║" -ForegroundColor Green
+Write-Host "║                    🎉 SETUP COMPLETED SUCCESSFULLY! 🎉                       ║" -ForegroundColor Green
+Write-Host "║                                                                              ║" -ForegroundColor Green
+Write-Host "║                     Thank you for using this installer!                     ║" -ForegroundColor Green
+Write-Host "║                                                                              ║" -ForegroundColor Green
+Write-Host "╚══════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host ""
 
-
+# Stop the transcript
+Stop-Transcript
