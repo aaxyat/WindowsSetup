@@ -1,3 +1,22 @@
+# Fix Unicode/Emoji display issues on fresh Windows installations
+try {
+    # Set console output encoding to UTF-8
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::InputEncoding = [System.Text.Encoding]::UTF8
+    
+    # Set PowerShell output encoding
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+    
+    # Try to set console font to one that supports Unicode
+    if ($Host.UI.RawUI.WindowTitle) {
+        # This works in regular PowerShell console
+        $Host.UI.RawUI.WindowSize = $Host.UI.RawUI.MaxWindowSize
+    }
+} catch {
+    # Fallback: Define alternative characters for systems that can't display Unicode
+    $script:UseAsciiOnly = $true
+}
+
 # Check if the script is running as administrator
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Host "You need to run this script as administrator." -ForegroundColor Red
@@ -5,33 +24,107 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 
-# Beautiful UI Functions
+# Beautiful UI Functions with Unicode fallback
+function Get-Icon {
+    param([string]$Name)
+    
+    if ($script:UseAsciiOnly) {
+        $asciiIcons = @{
+            "rocket" = "[*]"
+            "wrench" = "[+]"
+            "package" = "[P]"
+            "gear" = "[C]"
+            "computer" = "[PC]"
+            "globe" = "[W]"
+            "folder" = "[D]"
+            "success" = "[OK]"
+            "error" = "[X]"
+            "warning" = "[!]"
+            "info" = "[i]"
+            "progress" = "[~]"
+            "done" = "[*]"
+            "installing" = "[>]"
+            "separator" = "="
+            "party" = "[!]"
+        }
+        return $asciiIcons[$Name]
+    } else {
+        $unicodeIcons = @{
+            "rocket" = "🚀"
+            "wrench" = "🔧"
+            "package" = "📦"
+            "gear" = "⚙️"
+            "computer" = "💻"
+            "globe" = "🌐"
+            "folder" = "📁"
+            "success" = "✅"
+            "error" = "❌"
+            "warning" = "⚠️"
+            "info" = "ℹ️"
+            "progress" = "⏳"
+            "done" = "✨"
+            "installing" = "🔄"
+            "separator" = "─"
+            "party" = "🎉"
+        }
+        return $unicodeIcons[$Name]
+    }
+}
+
 function Show-Banner {
     Clear-Host
-    $banner = @"
+    $rocket = Get-Icon "rocket"
+    $separator = Get-Icon "separator"
+    
+    if ($script:UseAsciiOnly) {
+        $banner = @"
+================================================================================
+                                                                              
+                    $rocket WINDOWS SYSTEM SETUP INSTALLER $rocket                     
+                                                                              
+                      Automated Package Installation                          
+                           & System Configuration                             
+                                                                              
+================================================================================
+"@
+    } else {
+        $banner = @"
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
-║                    🚀 WINDOWS SYSTEM SETUP INSTALLER 🚀                     ║
+║                    $rocket WINDOWS SYSTEM SETUP INSTALLER $rocket                     ║
 ║                                                                              ║
 ║                      Automated Package Installation                          ║
 ║                           & System Configuration                             ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 "@
+    }
     Write-Host $banner -ForegroundColor Cyan
     Write-Host ""
 }
 
 function Show-Section {
-    param([string]$Title, [string]$Icon = "🔧")
+    param([string]$Title, [string]$IconName = "wrench")
+    
+    $icon = Get-Icon $IconName
+    $separator = Get-Icon "separator"
+    
     Write-Host ""
-    Write-Host "┌─" -NoNewline -ForegroundColor DarkGray
-    Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
-    Write-Host "─┐" -ForegroundColor DarkGray
-    Write-Host "│  $Icon $Title  │" -ForegroundColor Yellow
-    Write-Host "└─" -NoNewline -ForegroundColor DarkGray
-    Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
-    Write-Host "─┘" -ForegroundColor DarkGray
+    if ($script:UseAsciiOnly) {
+        Write-Host "$separator" -NoNewline -ForegroundColor DarkGray
+        Write-Host "$separator" * ($Title.Length + 6) -ForegroundColor DarkGray
+        Write-Host "  $icon $Title" -ForegroundColor Yellow
+        Write-Host "$separator" -NoNewline -ForegroundColor DarkGray
+        Write-Host "$separator" * ($Title.Length + 6) -ForegroundColor DarkGray
+    } else {
+        Write-Host "┌─" -NoNewline -ForegroundColor DarkGray
+        Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
+        Write-Host "─┐" -ForegroundColor DarkGray
+        Write-Host "│  $icon $Title  │" -ForegroundColor Yellow
+        Write-Host "└─" -NoNewline -ForegroundColor DarkGray
+        Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
+        Write-Host "─┘" -ForegroundColor DarkGray
+    }
     Write-Host ""
 }
 
@@ -42,14 +135,7 @@ function Show-Status {
         [switch]$NoNewline
     )
     
-    $icons = @{
-        "Success" = "✅"
-        "Error"   = "❌"
-        "Warning" = "⚠️"
-        "Info"    = "ℹ️"
-        "Progress" = "⏳"
-        "Done"    = "✨"
-    }
+    $icon = Get-Icon $Status.ToLower()
     
     $colors = @{
         "Success" = "Green"
@@ -60,7 +146,6 @@ function Show-Status {
         "Done"    = "Green"
     }
     
-    $icon = $icons[$Status]
     $color = $colors[$Status]
     
     if ($NoNewline) {
@@ -115,19 +200,29 @@ function Show-Summary {
     )
     
     Write-Host ""
-    Write-Host "╔═══════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║           INSTALLATION SUMMARY        ║" -ForegroundColor Cyan
-    Write-Host "╠═══════════════════════════════════════╣" -ForegroundColor Cyan
-    Write-Host "║  Total Packages: " -NoNewline -ForegroundColor Cyan
-    Write-Host ("{0,-19}" -f $Total) -NoNewline -ForegroundColor White
-    Write-Host "║" -ForegroundColor Cyan
-    Write-Host "║  Successful: " -NoNewline -ForegroundColor Cyan
-    Write-Host ("{0,-23}" -f $Successful) -NoNewline -ForegroundColor Green
-    Write-Host "║" -ForegroundColor Cyan
-    Write-Host "║  Failed: " -NoNewline -ForegroundColor Cyan
-    Write-Host ("{0,-27}" -f $Failed) -NoNewline -ForegroundColor Red
-    Write-Host "║" -ForegroundColor Cyan
-    Write-Host "╚═══════════════════════════════════════╝" -ForegroundColor Cyan
+    if ($script:UseAsciiOnly) {
+        Write-Host "===============================================" -ForegroundColor Cyan
+        Write-Host "           INSTALLATION SUMMARY" -ForegroundColor Cyan
+        Write-Host "===============================================" -ForegroundColor Cyan
+        Write-Host "  Total Packages: $Total" -ForegroundColor White
+        Write-Host "  Successful: $Successful" -ForegroundColor Green
+        Write-Host "  Failed: $Failed" -ForegroundColor Red
+        Write-Host "===============================================" -ForegroundColor Cyan
+    } else {
+        Write-Host "╔═══════════════════════════════════════╗" -ForegroundColor Cyan
+        Write-Host "║           INSTALLATION SUMMARY        ║" -ForegroundColor Cyan
+        Write-Host "╠═══════════════════════════════════════╣" -ForegroundColor Cyan
+        Write-Host "║  Total Packages: " -NoNewline -ForegroundColor Cyan
+        Write-Host ("{0,-19}" -f $Total) -NoNewline -ForegroundColor White
+        Write-Host "║" -ForegroundColor Cyan
+        Write-Host "║  Successful: " -NoNewline -ForegroundColor Cyan
+        Write-Host ("{0,-23}" -f $Successful) -NoNewline -ForegroundColor Green
+        Write-Host "║" -ForegroundColor Cyan
+        Write-Host "║  Failed: " -NoNewline -ForegroundColor Cyan
+        Write-Host ("{0,-27}" -f $Failed) -NoNewline -ForegroundColor Red
+        Write-Host "║" -ForegroundColor Cyan
+        Write-Host "╚═══════════════════════════════════════╝" -ForegroundColor Cyan
+    }
     Write-Host ""
 }
 
@@ -135,7 +230,7 @@ function Show-Summary {
 Show-Banner
 
 # Define the log file path
-Show-Section "System Initialization" "🔧"
+Show-Section "System Initialization" "wrench"
 $logDir = "$HOME\Documents\logs"
 $logFile = "$logDir\apps-setup.log"
 
@@ -158,7 +253,7 @@ Set-ExecutionPolicy Unrestricted -Scope LocalMachine -Force
 Show-Status "Execution policy set to Unrestricted" "Success"
 
 # Check if Chocolatey is installed
-Show-Section "Package Manager Setup" "📦"
+Show-Section "Package Manager Setup" "package"
 if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
     Show-Status "Installing Chocolatey..." "Progress"
     Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -169,7 +264,7 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
 }
 
 # Set WinGet downloader to WinINET
-Show-Section "WinGet Configuration" "⚙️"
+Show-Section "WinGet Configuration" "gear"
 Show-Status "Configuring WinGet downloader..." "Progress"
 try {
     $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json"
@@ -229,7 +324,7 @@ try {
 }
 
 # Check if PowerShell 7 is installed using winget
-Show-Section "PowerShell 7 Setup" "💻"
+Show-Section "PowerShell 7 Setup" "computer"
 if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
     Show-Status "Installing PowerShell 7..." "Progress"
     winget install --accept-source-agreements --accept-package-agreements -e --id Microsoft.PowerShell 
@@ -246,7 +341,7 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 }
 
 # Setup Brave Registry Keys
-Show-Section "Browser Configuration" "🌐"
+Show-Section "Browser Configuration" "globe"
 Show-Status "Configuring Brave Browser settings..." "Progress"
 $bravePath = "HKLM:\SOFTWARE\Policies\BraveSoftware\Brave"
 
@@ -313,7 +408,7 @@ function Install-Packages {
         [string]$Manager = "winget"
     )
     
-    Show-Section "$Type Installation" "📦"
+    Show-Section "$Type Installation" "package"
     
     $activePackages = ($PackageIds | Where-Object { $_ -notmatch '^\s*#' })
     $total = $activePackages.Count
@@ -335,7 +430,7 @@ function Install-Packages {
         # Clear console but keep the header and completed packages
         Clear-Host
         Show-Banner
-        Show-Section "$Type Installation" "📦"
+        Show-Section "$Type Installation" "package"
         
         # Show completed packages
         if ($completedPackages.Count -gt 0) {
@@ -346,9 +441,16 @@ function Install-Packages {
         }
         
         # Show current installation
-        Write-Host "🔄 Installing Package $current/$total`: " -NoNewline -ForegroundColor Cyan
+        $installingIcon = Get-Icon "installing"
+        Write-Host "$installingIcon Installing Package $current/$total`: " -NoNewline -ForegroundColor Cyan
         Write-Host $package -ForegroundColor White
-        Write-Host "$('-' * 80)" -ForegroundColor DarkGray
+        
+        $separator = Get-Icon "separator"
+        if ($script:UseAsciiOnly) {
+            Write-Host ($separator * 80) -ForegroundColor DarkGray
+        } else {
+            Write-Host "$('-' * 80)" -ForegroundColor DarkGray
+        }
         Write-Host ""
         
         try {
@@ -362,15 +464,19 @@ function Install-Packages {
                 $exitCode = $LASTEXITCODE
             }
             
+            $successIcon = Get-Icon "success"
+            $errorIcon = Get-Icon "error"
+            
             if ($exitCode -eq 0) {
-                $completedPackages += "✅ Package $current/$total`: $package installed successfully"
+                $completedPackages += "$successIcon Package $current/$total`: $package installed successfully"
                 $successful++
             } else {
-                $completedPackages += "❌ Package $current/$total`: $package failed (Exit Code: $exitCode)"
+                $completedPackages += "$errorIcon Package $current/$total`: $package failed (Exit Code: $exitCode)"
                 $failed++
             }
         } catch {
-            $completedPackages += "❌ Package $current/$total`: $package error - $_"
+            $errorIcon = Get-Icon "error"
+            $completedPackages += "$errorIcon Package $current/$total`: $package error - $_"
             $failed++
         }
     }
@@ -378,7 +484,7 @@ function Install-Packages {
     # Final display with all results
     Clear-Host
     Show-Banner
-    Show-Section "$Type Installation Complete" "✨"
+    Show-Section "$Type Installation Complete" "done"
     
     foreach ($completed in $completedPackages) {
         Write-Host $completed
