@@ -305,7 +305,7 @@ foreach ($dir in $directories.GetEnumerator()) {
     }
 }
 
-# Enhanced Package Installation Function
+# Enhanced Package Installation Function with Clean Output
 function Install-Packages {
     param (
         [string[]]$PackageIds,
@@ -320,8 +320,10 @@ function Install-Packages {
     $current = 0
     $successful = 0
     $failed = 0
+    $completedPackages = @()
     
     Show-Status "Starting installation of $total packages..." "Info"
+    Write-Host ""
     
     foreach ($package in $PackageIds) {
         if ($package -match '^\s*#') {
@@ -329,29 +331,60 @@ function Install-Packages {
         }
         
         $current++
-        Show-InstallationProgress -Current $current -Total $total -PackageName $package -Type $Type
+        
+        # Clear console but keep the header and completed packages
+        Clear-Host
+        Show-Banner
+        Show-Section "$Type Installation" "📦"
+        
+        # Show completed packages
+        if ($completedPackages.Count -gt 0) {
+            foreach ($completed in $completedPackages) {
+                Write-Host $completed
+            }
+            Write-Host ""
+        }
+        
+        # Show current installation
+        Write-Host "🔄 Installing Package $current/$total`: " -NoNewline -ForegroundColor Cyan
+        Write-Host $package -ForegroundColor White
+        Write-Host "$('-' * 80)" -ForegroundColor DarkGray
+        Write-Host ""
         
         try {
             if ($Manager -eq "winget") {
-                $result = winget install --accept-package-agreements --id $package 2>&1
+                # Direct execution to show real-time output
+                & winget install --accept-package-agreements --id $package
+                $exitCode = $LASTEXITCODE
             } elseif ($Manager -eq "choco") {
-                $result = choco install -y $package 2>&1
+                # Direct execution to show real-time output
+                & choco install -y $package
+                $exitCode = $LASTEXITCODE
             }
             
-            if ($LASTEXITCODE -eq 0) {
-                Show-Status "✅ $package installed successfully" "Success"
+            if ($exitCode -eq 0) {
+                $completedPackages += "✅ Package $current/$total`: $package installed successfully"
                 $successful++
             } else {
-                Show-Status "❌ Failed to install $package" "Error"
+                $completedPackages += "❌ Package $current/$total`: $package failed (Exit Code: $exitCode)"
                 $failed++
             }
         } catch {
-            Show-Status "❌ Error installing $package`: $_" "Error"
+            $completedPackages += "❌ Package $current/$total`: $package error - $_"
             $failed++
         }
     }
     
-    Write-Progress -Activity "Installing $Type" -Completed
+    # Final display with all results
+    Clear-Host
+    Show-Banner
+    Show-Section "$Type Installation Complete" "✨"
+    
+    foreach ($completed in $completedPackages) {
+        Write-Host $completed
+    }
+    
+    Write-Host ""
     Show-Summary -Successful $successful -Failed $failed -Total $total
 }
 
