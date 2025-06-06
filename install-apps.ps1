@@ -1,22 +1,4 @@
-# Fix Unicode/Emoji display issues on fresh Windows installations
-try {
-    # Set console output encoding to UTF-8
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    [Console]::InputEncoding = [System.Text.Encoding]::UTF8
-    
-    # Set PowerShell output encoding
-    $OutputEncoding = [System.Text.Encoding]::UTF8
-    
-    # Try to set console font to one that supports Unicode
-    if ($Host.UI.RawUI.WindowTitle) {
-        # This works in regular PowerShell console
-        $Host.UI.RawUI.WindowSize = $Host.UI.RawUI.MaxWindowSize
-    }
-} catch {
-    # Fallback: Define alternative characters for systems that can't display Unicode
-    $script:UseAsciiOnly = $true
-}
-
+# ASCII-Only Windows Setup Script
 # Check if the script is running as administrator
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Host "You need to run this script as administrator." -ForegroundColor Red
@@ -24,60 +6,38 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 
-# Beautiful UI Functions with Unicode fallback
+# ASCII Icons
 function Get-Icon {
     param([string]$Name)
     
-    if ($script:UseAsciiOnly) {
-        $asciiIcons = @{
-            "rocket" = "[*]"
-            "wrench" = "[+]"
-            "package" = "[P]"
-            "gear" = "[C]"
-            "computer" = "[PC]"
-            "globe" = "[W]"
-            "folder" = "[D]"
-            "success" = "[OK]"
-            "error" = "[X]"
-            "warning" = "[!]"
-            "info" = "[i]"
-            "progress" = "[~]"
-            "done" = "[*]"
-            "installing" = "[>]"
-            "separator" = "="
-            "party" = "[!]"
-        }
-        return $asciiIcons[$Name]
-    } else {
-        $unicodeIcons = @{
-            "rocket" = "🚀"
-            "wrench" = "🔧"
-            "package" = "📦"
-            "gear" = "⚙️"
-            "computer" = "💻"
-            "globe" = "🌐"
-            "folder" = "📁"
-            "success" = "✅"
-            "error" = "❌"
-            "warning" = "⚠️"
-            "info" = "ℹ️"
-            "progress" = "⏳"
-            "done" = "✨"
-            "installing" = "🔄"
-            "separator" = "─"
-            "party" = "🎉"
-        }
-        return $unicodeIcons[$Name]
+    $asciiIcons = @{
+        "rocket" = "[*]"
+        "wrench" = "[+]"
+        "package" = "[P]"
+        "gear" = "[C]"
+        "computer" = "[PC]"
+        "globe" = "[W]"
+        "folder" = "[D]"
+        "success" = "[OK]"
+        "error" = "[X]"
+        "warning" = "[!]"
+        "info" = "[i]"
+        "progress" = "[~]"
+        "done" = "[*]"
+        "installing" = "[>]"
+        "separator" = "="
+        "party" = "[!]"
+        "utility" = "[U]"
+        "complete" = "[DONE]"
     }
+    return $asciiIcons[$Name]
 }
 
 function Show-Banner {
     Clear-Host
     $rocket = Get-Icon "rocket"
-    $separator = Get-Icon "separator"
     
-    if ($script:UseAsciiOnly) {
-        $banner = @"
+    $banner = @"
 ================================================================================
                                                                               
                     $rocket WINDOWS SYSTEM SETUP INSTALLER $rocket                     
@@ -87,18 +47,6 @@ function Show-Banner {
                                                                               
 ================================================================================
 "@
-    } else {
-        $banner = @"
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║                    $rocket WINDOWS SYSTEM SETUP INSTALLER $rocket                     ║
-║                                                                              ║
-║                      Automated Package Installation                          ║
-║                           & System Configuration                             ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-"@
-    }
     Write-Host $banner -ForegroundColor Cyan
     Write-Host ""
 }
@@ -110,21 +58,11 @@ function Show-Section {
     $separator = Get-Icon "separator"
     
     Write-Host ""
-    if ($script:UseAsciiOnly) {
-        Write-Host "$separator" -NoNewline -ForegroundColor DarkGray
-        Write-Host "$separator" * ($Title.Length + 6) -ForegroundColor DarkGray
-        Write-Host "  $icon $Title" -ForegroundColor Yellow
-        Write-Host "$separator" -NoNewline -ForegroundColor DarkGray
-        Write-Host "$separator" * ($Title.Length + 6) -ForegroundColor DarkGray
-    } else {
-        Write-Host "┌─" -NoNewline -ForegroundColor DarkGray
-        Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
-        Write-Host "─┐" -ForegroundColor DarkGray
-        Write-Host "│  $icon $Title  │" -ForegroundColor Yellow
-        Write-Host "└─" -NoNewline -ForegroundColor DarkGray
-        Write-Host "─" * ($Title.Length + 4) -NoNewline -ForegroundColor DarkGray
-        Write-Host "─┘" -ForegroundColor DarkGray
-    }
+    Write-Host "$separator" -NoNewline -ForegroundColor DarkGray
+    Write-Host "$separator" * ($Title.Length + 6) -ForegroundColor DarkGray
+    Write-Host "  $icon $Title" -ForegroundColor Yellow
+    Write-Host "$separator" -NoNewline -ForegroundColor DarkGray
+    Write-Host "$separator" * ($Title.Length + 6) -ForegroundColor DarkGray
     Write-Host ""
 }
 
@@ -168,9 +106,9 @@ function Show-InstallationProgress {
     $progressBar = Create-ProgressBar -Percent $percentComplete -Width 50
     
     Write-Host ""
-    Write-Host "  📦 Package: " -NoNewline -ForegroundColor Cyan
+    Write-Host "  [P] Package: " -NoNewline -ForegroundColor Cyan
     Write-Host $PackageName -ForegroundColor White
-    Write-Host "  📊 Progress: " -NoNewline -ForegroundColor Cyan
+    Write-Host "  [%] Progress: " -NoNewline -ForegroundColor Cyan
     Write-Host "($Current/$Total) " -NoNewline -ForegroundColor Yellow
     Write-Host "$percentComplete%" -ForegroundColor Green
     Write-Host "  $progressBar" -ForegroundColor Blue
@@ -188,7 +126,7 @@ function Create-ProgressBar {
     $filled = [math]::Floor($Width * $Percent / 100)
     $empty = $Width - $filled
     
-    $bar = "█" * $filled + "░" * $empty
+    $bar = "#" * $filled + "-" * $empty
     return "[$bar] $Percent%"
 }
 
@@ -200,29 +138,13 @@ function Show-Summary {
     )
     
     Write-Host ""
-    if ($script:UseAsciiOnly) {
-        Write-Host "===============================================" -ForegroundColor Cyan
-        Write-Host "           INSTALLATION SUMMARY" -ForegroundColor Cyan
-        Write-Host "===============================================" -ForegroundColor Cyan
-        Write-Host "  Total Packages: $Total" -ForegroundColor White
-        Write-Host "  Successful: $Successful" -ForegroundColor Green
-        Write-Host "  Failed: $Failed" -ForegroundColor Red
-        Write-Host "===============================================" -ForegroundColor Cyan
-    } else {
-        Write-Host "╔═══════════════════════════════════════╗" -ForegroundColor Cyan
-        Write-Host "║           INSTALLATION SUMMARY        ║" -ForegroundColor Cyan
-        Write-Host "╠═══════════════════════════════════════╣" -ForegroundColor Cyan
-        Write-Host "║  Total Packages: " -NoNewline -ForegroundColor Cyan
-        Write-Host ("{0,-19}" -f $Total) -NoNewline -ForegroundColor White
-        Write-Host "║" -ForegroundColor Cyan
-        Write-Host "║  Successful: " -NoNewline -ForegroundColor Cyan
-        Write-Host ("{0,-23}" -f $Successful) -NoNewline -ForegroundColor Green
-        Write-Host "║" -ForegroundColor Cyan
-        Write-Host "║  Failed: " -NoNewline -ForegroundColor Cyan
-        Write-Host ("{0,-27}" -f $Failed) -NoNewline -ForegroundColor Red
-        Write-Host "║" -ForegroundColor Cyan
-        Write-Host "╚═══════════════════════════════════════╝" -ForegroundColor Cyan
-    }
+    Write-Host "===============================================" -ForegroundColor Cyan
+    Write-Host "           INSTALLATION SUMMARY" -ForegroundColor Cyan
+    Write-Host "===============================================" -ForegroundColor Cyan
+    Write-Host "  Total Packages: $Total" -ForegroundColor White
+    Write-Host "  Successful: $Successful" -ForegroundColor Green
+    Write-Host "  Failed: $Failed" -ForegroundColor Red
+    Write-Host "===============================================" -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -368,7 +290,7 @@ foreach ($setting in $braveSettings.GetEnumerator()) {
 Show-Status "Brave Browser configured successfully" "Success"
 
 # Copy AHK Script and execute it 
-Show-Section "Utility Setup" "🔧"
+Show-Section "Utility Setup" "utility"
 Show-Status "Setting up shortcuts utility..." "Progress"
 try {
     Invoke-WebRequest -Uri "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/shortcuts.exe" -OutFile "$env:TEMP\shortcut.exe"
@@ -384,7 +306,7 @@ try {
 }
 
 # Create directories
-Show-Section "Directory Setup" "📁"
+Show-Section "Directory Setup" "folder"
 $directories = @{
     "Github" = Join-Path $HOME\Documents "Github"
     "Projects" = Join-Path $HOME\Documents "Projects"
@@ -445,12 +367,7 @@ function Install-Packages {
         Write-Host "$installingIcon Installing Package $current/$total`: " -NoNewline -ForegroundColor Cyan
         Write-Host $package -ForegroundColor White
         
-        $separator = Get-Icon "separator"
-        if ($script:UseAsciiOnly) {
-            Write-Host ($separator * 80) -ForegroundColor DarkGray
-        } else {
-            Write-Host "$('-' * 80)" -ForegroundColor DarkGray
-        }
+        Write-Host ("=" * 80) -ForegroundColor DarkGray
         Write-Host ""
         
         try {
@@ -495,7 +412,7 @@ function Install-Packages {
 }
 
 # Package Lists
-$chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl")
+$chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl", "qbittorrent")
 
 $wingetPackages = @(
     'WireGuard.WireGuard',
@@ -504,7 +421,6 @@ $wingetPackages = @(
     'Bitwarden.CLI',
     'WinDirStat.WinDirStat',
     'amir1376.ABDownloadManager',
-    'qBittorrent.qBittorrent',
     'Git.Git',
     'yt-dlp.yt-dlp',
     '7zip.7zip',
@@ -519,7 +435,6 @@ $wingetPackages = @(
     'Notepad++.Notepad++',
     'calibre.calibre',
     'RevoUninstaller.RevoUninstaller',
-    'Amazon.SendToKindle',
     'StartIsBack.StartAllBack',
     'AppWork.JDownloader',
     'CodecGuide.K-LiteCodecPack.Full',
@@ -528,7 +443,6 @@ $wingetPackages = @(
     'Mozilla.Firefox',
     'GitHub.GitHubDesktop',
     'tailscale.tailscale',
-    'TechNobo.TcNoAccountSwitcher',
     'Valve.Steam',
     'Microsoft.PowerToys',
     'voidtools.Everything',
@@ -541,7 +455,6 @@ $wingetPackages = @(
     'Jellyfin.JellyfinMediaPlayer',
     'IanWalton.JellyfinMPVShim',
     'Termius.Termius',
-    'XMBCFoundation.Kodi',
     'mpv.net',
     'Rakuten.Viber',
     "AdGuard.AdGuard",
@@ -549,7 +462,8 @@ $wingetPackages = @(
     "Genymobile.scrcpy",
     "Microsoft.Sysinternals.ProcessMonitor",
     "EpicGames.EpicGamesLauncher",
-    "MarkText.MarkText"
+    "MarkText.MarkText",
+    "Amazon.Corretto.24.JDK"
 )
 
 $storePackages = @(
@@ -565,18 +479,18 @@ Install-Packages -PackageIds $wingetPackages -Type "Regular Applications"
 Install-Packages -PackageIds $storePackages -Type "Microsoft Store Applications"
 
 # Final completion message
-Show-Section "Installation Complete" "🎉"
+Show-Section "Installation Complete" "complete"
 Show-Status "All installations have been completed!" "Done"
 Show-Status "Check the log file for detailed information: $logFile" "Info"
 
 Write-Host ""
-Write-Host "╔══════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║                                                                              ║" -ForegroundColor Green
-Write-Host "║                    🎉 SETUP COMPLETED SUCCESSFULLY! 🎉                       ║" -ForegroundColor Green
-Write-Host "║                                                                              ║" -ForegroundColor Green
-Write-Host "║                     Thank you for using this installer!                     ║" -ForegroundColor Green
-Write-Host "║                                                                              ║" -ForegroundColor Green
-Write-Host "╚══════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "================================================================================" -ForegroundColor Green
+Write-Host "                                                                              " -ForegroundColor Green
+Write-Host "                    [!] SETUP COMPLETED SUCCESSFULLY! [!]                    " -ForegroundColor Green
+Write-Host "                                                                              " -ForegroundColor Green
+Write-Host "                     Thank you for using this installer!                     " -ForegroundColor Green
+Write-Host "                                                                              " -ForegroundColor Green
+Write-Host "================================================================================" -ForegroundColor Green
 Write-Host ""
 
 # Stop the transcript
