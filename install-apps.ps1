@@ -466,12 +466,29 @@ $wingetPackages = @(
     "Amazon.Corretto.24.JDK"
 )
 
+# Base store packages for all systems
 $storePackages = @(
-    '9P92N00QV14J', # HP Command Center
-    '9P1FBSLRNM43', # BatteryTracker
     '9NKSQGP7F2NH', # Whatsapp
     '9n0dx20hk701' # Windows Terminal
 )
+
+# Check if this is an HP system and add HP-specific packages
+Show-Status "Detecting system manufacturer..." "Progress"
+try {
+    $manufacturer = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
+    Show-Status "System manufacturer: $manufacturer" "Info"
+    
+    if ($manufacturer -like "*HP*" -or $manufacturer -like "*Hewlett*") {
+        Show-Status "HP system detected - adding HP-specific applications" "Success"
+        $storePackages += '9P92N00QV14J' # HP Command Center
+        $storePackages += '9P1FBSLRNM43' # BatteryTracker
+        Show-Status "Added: HP Command Center and BatteryTracker" "Info"
+    } else {
+        Show-Status "Non-HP system detected - skipping HP-specific applications" "Info"
+    }
+} catch {
+    Show-Status "Could not detect manufacturer - skipping HP-specific applications: $_" "Warning"
+}
 
 # Execute installations
 Install-Packages -PackageIds $chocoPackages -Type "Chocolatey Applications" -Manager "choco"
