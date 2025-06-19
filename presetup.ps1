@@ -132,3 +132,8 @@ if ($model -eq "HP ENVY x360 Convertible 15-eu1xxx") {
 } else {
     Write-Host "`nSkipping rotation settings - not applicable for desktop PC" -ForegroundColor Cyan
 }
+
+# Pause to allow user to review output
+Write-Host "`nScript execution completed!" -ForegroundColor Green
+Write-Host "Press any key to continue..." -ForegroundColor Yellow
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
