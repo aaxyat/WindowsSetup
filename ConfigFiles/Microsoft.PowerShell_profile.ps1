@@ -112,59 +112,77 @@ function gcom {
 }
 
 # Function to losslessly merge multiple mp4 files into a single file using ffmpeg
-function merge-mp4 {
+function Merge-MP4 {
         [CmdletBinding()]
         param(
-                [string]$outputFile = "merged_output.mp4"
+            [string]$OutputFile = "merged_output.mp4"
         )
-        # Step 1: Get all mp4 files sorted by name
-        $files = Get-ChildItem -Path $pwd -Filter "*.mp4" | Sort-Object Name
-        if (-not $files) {
-                Write-Error "No mp4 files found in the current directory"
+    
+        # 1. Get and validate MP4 files
+        try {
+            $files = Get-ChildItem -Path $PWD -Filter "*.mp4" -ErrorAction Stop | 
+                     Sort-Object Name
+            if (-not $files) {
+                Write-Error "No MP4 files found in current directory"
                 return
+            }
         }
-        # Step 2: create filelist.txt
-        $fileListPath = Join-Path $pwd "filelist.txt"
-        $files | ForEach-Object { "file '$($_.Name)'" } | Set-Content $fileListPath
-
-        # 3. Initialize progress tracking
-        $totalFiles = $files.Count
-        $counter = 0
-        $activity = "🎬 Merging MP4 Files"
-        $startTime = Get-Date
-
-        # 4. Run FFmpeg with progress parsing
-        Write-Progress -Activity $activity -Status "Preparing to merge $totalFiles files..." -PercentComplete 0
-
-        & ffmpeg -f concat -safe 0 -i $fileListPath -c copy $outputFile 2>&1 | ForEach-Object {
-                if ($_ -match 'time=(\d+:\d+:\d+\.\d+)') {
-                    $counter++
-                    $percentComplete = ($counter / $totalFiles) * 100
-                    $elapsedTime = (Get-Date) - $startTime
-                    $estimatedTotal = $elapsedTime.TotalSeconds / ($percentComplete / 100)
-                    $remainingTime = [TimeSpan]::FromSeconds($estimatedTotal - $elapsedTime.TotalSeconds)
-                    
-                    $progressStatus = @(
-                        "[$counter/$totalFiles]",
-                        "$('{0:N1}' -f $percentComplete)% Complete",
-                        "ETA: $($remainingTime.ToString('hh\:mm\:ss'))"
-                    ) -join " | "
-
-                    $currentFile = $files[$counter - 1].Name
-                    Write-Progress -Activity $activity `
-                        -Status $progressStatus `
-                        -CurrentOperation "Processing: $currentFile" `
-                        -PercentComplete $percentComplete `
-                        -SecondsRemaining $remainingTime.TotalSeconds
-                }
+        catch {
+            Write-Error "File discovery failed: $_"
+            return
         }
     
-    # 5. Cleanup and completion
-    Write-Progress -Activity $activity -Completed
-    Remove-Item $fileListPath -ErrorAction SilentlyContinue
-    Write-Host "Merged $totalFiles files into $OutputFile" -ForegroundColor Green
-
-}
+        # 2. Create temporary file list
+        $fileListPath = Join-Path $PWD "filelist.txt"
+        try {
+            $files | ForEach-Object { "file '$($_.Name)'" } | 
+            Set-Content -Path $fileListPath -ErrorAction Stop
+        }
+        catch {
+            Write-Error "Failed to create file list: $_"
+            return
+        }
+    
+        # 3. Initialize progress tracking
+        $activity = "🎬 Merging $($files.Count) MP4 Files"
+        $progressParams = @{
+            Activity = $activity
+            Status   = "Starting FFmpeg processing..."
+            PercentComplete = 0
+        }
+        Write-Progress @progressParams
+    
+        # 4. Execute FFmpeg with error handling
+        $ffmpegOutput = & ffmpeg -f concat -safe 0 -i $fileListPath -c copy $OutputFile 2>&1
+        $ffmpegExitCode = $LASTEXITCODE
+    
+        # 5. Process output and handle errors
+        $ffmpegOutput | ForEach-Object {
+            Write-Host $_  # Forward FFmpeg output to console
+            if ($_ -match 'time=(\S+)') {
+                Write-Progress -Activity $activity -Status "Processing: $($matches[1])" -PercentComplete -1
+            }
+        }
+    
+        # 6. Validate results and cleanup
+        Remove-Item $fileListPath -ErrorAction SilentlyContinue
+        
+        if ($ffmpegExitCode -eq 0) {
+            if (Test-Path $OutputFile) {
+                Write-Host "✅ Successfully merged $($files.Count) files into '$OutputFile'" -ForegroundColor Green
+                return $true
+            }
+            else {
+                Write-Error "FFmpeg succeeded but output file missing"
+                return $false
+            }
+        }
+        else {
+            Write-Error "FFmpeg failed with exit code $ffmpegExitCode (Error details above)"
+            return $false
+        }
+    }
+    
 function lazyg {
         git add .
         git commit -m "$args"
