@@ -460,6 +460,7 @@ function s {
         'doh'           = @{desc = 'Configure Cloudflare DNS over HTTPS with IPv4 and IPv6 support (requires admin)'; usage = 'doh'; color = 'Cyan'}
         'kali'          = @{desc = 'Open Kali Linux WSL instance'; usage = 'kali'; color = 'Cyan'}
         'ubuntu'        = @{desc = 'Open Ubuntu WSL instance'; usage = 'ubuntu'; color = 'Cyan'}
+        'merge-mp4'     = @{desc = 'Merge multiple MP4 files into a single file using ffmpeg'; usage = 'merge-mp4'; color = 'Green'}
     }
 
     if ($command) {
