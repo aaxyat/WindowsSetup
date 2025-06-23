@@ -110,6 +110,61 @@ function gcom {
         git add .
         git commit -m "$args"
 }
+
+# Function to losslessly merge multiple mp4 files into a single file using ffmpeg
+function merge-mp4 {
+        [CmdletBinding()]
+        param(
+                [string]$outputFile = "merged_output.mp4"
+        )
+        # Step 1: Get all mp4 files sorted by name
+        $files = Get-ChildItem -Path $pwd -Filter "*.mp4" | Sort-Object Name
+        if (-not $files) {
+                Write-Error "No mp4 files found in the current directory"
+                return
+        }
+        # Step 2: create filelist.txt
+        $fileListPath = Join-Path $pwd "filelist.txt"
+        $files | ForEach-Object { "file '$($_.Name)'" } | Set-Content $fileListPath
+
+        # 3. Initialize progress tracking
+        $totalFiles = $files.Count
+        $counter = 0
+        $activity = "🎬 Merging MP4 Files"
+        $startTime = Get-Date
+
+        # 4. Run FFmpeg with progress parsing
+        Write-Progress -Activity $activity -Status "Preparing to merge $totalFiles files..." -PercentComplete 0
+
+        & ffmpeg -f concat -safe 0 -i $fileListPath -c copy $outputFile 2>&1 | ForEach-Object {
+                if ($_ -match 'time=(\d+:\d+:\d+\.\d+)') {
+                    $counter++
+                    $percentComplete = ($counter / $totalFiles) * 100
+                    $elapsedTime = (Get-Date) - $startTime
+                    $estimatedTotal = $elapsedTime.TotalSeconds / ($percentComplete / 100)
+                    $remainingTime = [TimeSpan]::FromSeconds($estimatedTotal - $elapsedTime.TotalSeconds)
+                    
+                    $progressStatus = @(
+                        "[$counter/$totalFiles]",
+                        "$('{0:N1}' -f $percentComplete)% Complete",
+                        "ETA: $($remainingTime.ToString('hh\:mm\:ss'))"
+                    ) -join " | "
+
+                    $currentFile = $files[$counter - 1].Name
+                    Write-Progress -Activity $activity `
+                        -Status $progressStatus `
+                        -CurrentOperation "Processing: $currentFile" `
+                        -PercentComplete $percentComplete `
+                        -SecondsRemaining $remainingTime.TotalSeconds
+                }
+        }
+    
+    # 5. Cleanup and completion
+    Write-Progress -Activity $activity -Completed
+    Remove-Item $fileListPath -ErrorAction SilentlyContinue
+    Write-Host "Merged $totalFiles files into $OutputFile" -ForegroundColor Green
+
+}
 function lazyg {
         git add .
         git commit -m "$args"
