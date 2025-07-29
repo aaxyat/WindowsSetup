@@ -289,6 +289,25 @@ foreach ($setting in $braveSettings.GetEnumerator()) {
 }
 Show-Status "Brave Browser configured successfully" "Success"
 
+# Setup Chrome Registry Keys for MV2 Support
+Show-Status "Configuring Chrome Browser settings..." "Progress"
+$chromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
+
+# Ensure the registry path exists
+if (-not (Test-Path $chromePath)) {
+    New-Item -Path $chromePath -Force | Out-Null
+}
+
+# Apply Chrome Browser settings for MV2 support
+$chromeSettings = @{
+    "ExtensionManifestV2Availability" = 2  # 2 = Enable for all extensions
+}
+
+foreach ($setting in $chromeSettings.GetEnumerator()) {
+    Set-ItemProperty -Path $chromePath -Name $setting.Key -Value $setting.Value -Type DWord
+}
+Show-Status "Chrome Browser configured successfully" "Success"
+
 # Copy AHK Script and execute it 
 Show-Section "Utility Setup" "utility"
 Show-Status "Setting up shortcuts utility..." "Progress"
@@ -415,9 +434,9 @@ function Install-Packages {
 $chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl", "qbittorrent")
 
 $wingetPackages = @(
+    'Google.Chrome',
     'WireGuard.WireGuard',
     'Tonec.InternetDownloadManager',
-    'Brave.Brave',
     'Bitwarden.Bitwarden',
     'Bitwarden.CLI',
     'WinDirStat.WinDirStat',
@@ -465,7 +484,8 @@ $wingetPackages = @(
     "Microsoft.Sysinternals.ProcessMonitor",
     "EpicGames.EpicGamesLauncher",
     "MarkText.MarkText",
-    "Amazon.Corretto.24.JDK"
+    "Amazon.Corretto.24.JDK",
+    "BrechtSanders.WinLibs.POSIX.UCRT"
 )
 
 # Base store packages for all systems
