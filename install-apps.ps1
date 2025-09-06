@@ -434,7 +434,7 @@ function Install-Packages {
 $chocoPackages = @("python", "autohotkey", "gsudo", "adb", "firacode", "curl", "qbittorrent")
 
 $wingetPackages = @(
-    'Google.Chrome',
+    'Brave.Brave',
     'WireGuard.WireGuard',
     'Tonec.InternetDownloadManager',
     'Bitwarden.Bitwarden',
@@ -454,7 +454,7 @@ $wingetPackages = @(
     'junegunn.fzf',
     'ajeetdsouza.zoxide',
     'Notepad++.Notepad++',
-    'calibre.calibre',
+    # 'calibre.calibre',
     'RevoUninstaller.RevoUninstaller',
     'StartIsBack.StartAllBack',
     'AppWork.JDownloader',
@@ -482,10 +482,10 @@ $wingetPackages = @(
     "Hugo.Hugo.Extended",
     "Genymobile.scrcpy",
     "Microsoft.Sysinternals.ProcessMonitor",
-    "EpicGames.EpicGamesLauncher",
+    # "EpicGames.EpicGamesLauncher",
     "MarkText.MarkText",
     "Amazon.Corretto.24.JDK"
-    # "BrechtSanders.WinLibs.POSIX.UCRT"
+    "BrechtSanders.WinLibs.POSIX.UCRT"
 )
 
 # Base store packages for all systems
