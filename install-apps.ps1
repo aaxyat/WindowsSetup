@@ -485,7 +485,8 @@ $wingetPackages = @(
     # "EpicGames.EpicGamesLauncher",
     "MarkText.MarkText",
     "Amazon.Corretto.24.JDK"
-    "BrechtSanders.WinLibs.POSIX.UCRT"
+    # "BrechtSanders.WinLibs.POSIX.UCRT",
+    "LocalSend.LocalSend"
 )
 
 # Base store packages for all systems

@@ -1,5 +1,26 @@
+# Set the timezone to UTC+ 5:45 (Nepal Standard Time)
+$currentTimeZone = tzutil /g
+if ($currentTimeZone -ne "Nepal Standard Time") {
+    $timeZoneConfirmation = Read-Host "Current timezone is '$currentTimeZone'. Do you want to set it to Nepal Standard Time (UTC+5:45)? (Y/N)"
+    if ($timeZoneConfirmation -eq 'Y' -or $timeZoneConfirmation -eq 'y') {
+        try {
+            Write-Host "Setting timezone to 'Nepal Standard Time' (UTC+5:45)..." -ForegroundColor Yellow
+            tzutil /s "Nepal Standard Time"
+            Write-Host "Timezone successfully set to 'Nepal Standard Time' (UTC+5:45)." -ForegroundColor Green
+        } catch {
+            Write-Host "Error setting timezone: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "Make sure you're running this script as Administrator." -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "Timezone change canceled. The current timezone remains as '$currentTimeZone'." -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "Timezone is already set to 'Nepal Standard Time' (UTC+5:45). No changes needed." -ForegroundColor Green
+}
 # Automatic Hostname Setup Script
+
 # Sets hostname based on computer model
+
 
 Write-Host "Checking computer model to set appropriate hostname..." -ForegroundColor Yellow
 
@@ -74,25 +95,7 @@ else {
     Write-Host "Hostname change cancelled." -ForegroundColor Yellow
     exit 0
 }
-# Set the timezone to UTC+ 5:45 (Nepal Standard Time)
-$currentTimeZone = tzutil /g
-if ($currentTimeZone -ne "Nepal Standard Time") {
-    $timeZoneConfirmation = Read-Host "Current timezone is '$currentTimeZone'. Do you want to set it to Nepal Standard Time (UTC+5:45)? (Y/N)"
-    if ($timeZoneConfirmation -eq 'Y' -or $timeZoneConfirmation -eq 'y') {
-        try {
-            Write-Host "Setting timezone to 'Nepal Standard Time' (UTC+5:45)..." -ForegroundColor Yellow
-            tzutil /s "Nepal Standard Time"
-            Write-Host "Timezone successfully set to 'Nepal Standard Time' (UTC+5:45)." -ForegroundColor Green
-        } catch {
-            Write-Host "Error setting timezone: $($_.Exception.Message)" -ForegroundColor Red
-            Write-Host "Make sure you're running this script as Administrator." -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "Timezone change canceled. The current timezone remains as '$currentTimeZone'." -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "Timezone is already set to 'Nepal Standard Time' (UTC+5:45). No changes needed." -ForegroundColor Green
-}
+
 
 
 # Configure rotation settings only for laptop (HP ENVY x360)
