@@ -108,13 +108,13 @@ Set-ItemProperty -Path $explorerKeyPath -Name "LaunchTo" -Value 1
 $hideExtensionsKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 Set-ItemProperty -Path $hideExtensionsKeyPath -Name "HideFileExt" -Value 0
 
-# Download and install Office
-Write-Host "Downloading and installing Office..."
-$officeUrl = "https://c2rsetup.officeapps.live.com/c2r/download.aspx?ProductreleaseID=O365ProPlusRetail&platform=x64&language=en-us&version=O16GA"
-$officeInstallerPath = "$env:TEMP\OfficeInstaller.exe"
-Invoke-WebRequest -Uri $officeUrl -OutFile $officeInstallerPath
-Start-Process -FilePath $officeInstallerPath -Wait
-Write-Host "Office installation completed."
+# # Download and install Office
+# Write-Host "Downloading and installing Office..."
+# $officeUrl = "https://c2rsetup.officeapps.live.com/c2r/download.aspx?ProductreleaseID=O365ProPlusRetail&platform=x64&language=en-us&version=O16GA"
+# $officeInstallerPath = "$env:TEMP\OfficeInstaller.exe"
+# Invoke-WebRequest -Uri $officeUrl -OutFile $officeInstallerPath
+# Start-Process -FilePath $officeInstallerPath -Wait
+# Write-Host "Office installation completed."
 
 # # Install Ubuntu
 wsl --install
