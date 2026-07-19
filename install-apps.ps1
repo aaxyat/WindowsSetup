@@ -9,7 +9,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 # ASCII Icons
 function Get-Icon {
     param([string]$Name)
-    
+
     $asciiIcons = @{
         "rocket" = "[*]"
         "wrench" = "[+]"
@@ -36,15 +36,15 @@ function Get-Icon {
 function Show-Banner {
     Clear-Host
     $rocket = Get-Icon "rocket"
-    
+
     $banner = @"
 ================================================================================
-                                                                              
-                    $rocket WINDOWS SYSTEM SETUP INSTALLER $rocket                     
-                                                                              
-                      Automated Package Installation                          
-                           & System Configuration                             
-                                                                              
+
+                    $rocket WINDOWS SYSTEM SETUP INSTALLER $rocket
+
+                      Automated Package Installation
+                           & System Configuration
+
 ================================================================================
 "@
     Write-Host $banner -ForegroundColor Cyan
@@ -53,10 +53,10 @@ function Show-Banner {
 
 function Show-Section {
     param([string]$Title, [string]$IconName = "wrench")
-    
+
     $icon = Get-Icon $IconName
     $separator = Get-Icon "separator"
-    
+
     Write-Host ""
     Write-Host "$separator" -NoNewline -ForegroundColor DarkGray
     Write-Host "$separator" * ($Title.Length + 6) -ForegroundColor DarkGray
@@ -72,9 +72,9 @@ function Show-Status {
         [string]$Status = "Info",
         [switch]$NoNewline
     )
-    
+
     $icon = Get-Icon $Status.ToLower()
-    
+
     $colors = @{
         "Success" = "Green"
         "Error"   = "Red"
@@ -83,9 +83,9 @@ function Show-Status {
         "Progress" = "Magenta"
         "Done"    = "Green"
     }
-    
+
     $color = $colors[$Status]
-    
+
     if ($NoNewline) {
         Write-Host "$icon $Message" -ForegroundColor $color -NoNewline
     } else {
@@ -101,10 +101,10 @@ function Show-InstallationProgress {
         [string]$Type,
         [string]$Status = "Installing"
     )
-    
+
     $percentComplete = [math]::Round(($Current / $Total) * 100)
     $progressBar = Create-ProgressBar -Percent $percentComplete -Width 50
-    
+
     Write-Host ""
     Write-Host "  [P] Package: " -NoNewline -ForegroundColor Cyan
     Write-Host $PackageName -ForegroundColor White
@@ -113,7 +113,7 @@ function Show-InstallationProgress {
     Write-Host "$percentComplete%" -ForegroundColor Green
     Write-Host "  $progressBar" -ForegroundColor Blue
     Write-Host ""
-    
+
     Write-Progress -Activity "Installing $Type" -Status "$Status $PackageName" -PercentComplete $percentComplete
 }
 
@@ -122,10 +122,10 @@ function Create-ProgressBar {
         [int]$Percent,
         [int]$Width = 50
     )
-    
+
     $filled = [math]::Floor($Width * $Percent / 100)
     $empty = $Width - $filled
-    
+
     $bar = "#" * $filled + "-" * $empty
     return "[$bar] $Percent%"
 }
@@ -136,7 +136,7 @@ function Show-Summary {
         [int]$Failed,
         [int]$Total
     )
-    
+
     Write-Host ""
     Write-Host "===============================================" -ForegroundColor Cyan
     Write-Host "           INSTALLATION SUMMARY" -ForegroundColor Cyan
@@ -191,19 +191,19 @@ Show-Status "Configuring WinGet downloader..." "Progress"
 try {
     $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json"
     $settingsDir = Split-Path -Parent $settingsPath
-    
+
     # Create settings directory if it doesn't exist
     if (!(Test-Path -Path $settingsDir)) {
         New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
     }
-    
+
     # Initialize settings object
     $settings = $null
 
     # Check if settings file exists
     if (Test-Path -Path $settingsPath) {
         $fileContent = Get-Content -Path $settingsPath -Raw -ErrorAction SilentlyContinue
-        
+
         # Check if file content is not null or empty
         if (![string]::IsNullOrWhiteSpace($fileContent)) {
             try {
@@ -249,7 +249,7 @@ try {
 Show-Section "PowerShell 7 Setup" "computer"
 if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
     Show-Status "Installing PowerShell 7..." "Progress"
-    winget install --accept-source-agreements --accept-package-agreements -e --id Microsoft.PowerShell 
+    winget install --accept-source-agreements --accept-package-agreements -e --id Microsoft.PowerShell
     Show-Status "PowerShell 7 installed successfully" "Success"
 } else {
     Show-Status "PowerShell 7 is already installed" "Info"
@@ -308,16 +308,16 @@ foreach ($setting in $chromeSettings.GetEnumerator()) {
 }
 Show-Status "Chrome Browser configured successfully" "Success"
 
-# Copy AHK Script and execute it 
+# Copy AHK Script and execute it
 Show-Section "Utility Setup" "utility"
 Show-Status "Setting up shortcuts utility..." "Progress"
 try {
     Invoke-WebRequest -Uri "https://github.com/aaxyat/WindowsSetup/raw/main/ConfigFiles/shortcuts.exe" -OutFile "$env:TEMP\shortcut.exe"
-    
+
     $shellStartup = [Environment]::GetFolderPath("Startup")
     $shortcutPath = Join-Path $shellStartup "shortcut.exe"
     Copy-Item -Path "$env:TEMP\shortcut.exe" -Destination $shortcutPath -Force
-    
+
     Start-Process -FilePath $shortcutPath -NoNewWindow
     Show-Status "Shortcuts utility configured successfully" "Success"
 } catch {
@@ -348,31 +348,31 @@ function Install-Packages {
         [string]$Type,
         [string]$Manager = "winget"
     )
-    
+
     Show-Section "$Type Installation" "package"
-    
+
     $activePackages = ($PackageIds | Where-Object { $_ -notmatch '^\s*#' })
     $total = $activePackages.Count
     $current = 0
     $successful = 0
     $failed = 0
     $completedPackages = @()
-    
+
     Show-Status "Starting installation of $total packages..." "Info"
     Write-Host ""
-    
+
     foreach ($package in $PackageIds) {
         if ($package -match '^\s*#') {
             continue
         }
-        
+
         $current++
-        
+
         # Clear console but keep the header and completed packages
         Clear-Host
         Show-Banner
         Show-Section "$Type Installation" "package"
-        
+
         # Show completed packages
         if ($completedPackages.Count -gt 0) {
             foreach ($completed in $completedPackages) {
@@ -380,15 +380,15 @@ function Install-Packages {
             }
             Write-Host ""
         }
-        
+
         # Show current installation
         $installingIcon = Get-Icon "installing"
         Write-Host "$installingIcon Installing Package $current/$total`: " -NoNewline -ForegroundColor Cyan
         Write-Host $package -ForegroundColor White
-        
+
         Write-Host ("=" * 80) -ForegroundColor DarkGray
         Write-Host ""
-        
+
         try {
             if ($Manager -eq "winget") {
                 # Direct execution to show real-time output
@@ -399,10 +399,10 @@ function Install-Packages {
                 & choco install -y $package
                 $exitCode = $LASTEXITCODE
             }
-            
+
             $successIcon = Get-Icon "success"
             $errorIcon = Get-Icon "error"
-            
+
             if ($exitCode -eq 0) {
                 $completedPackages += "$successIcon Package $current/$total`: $package installed successfully"
                 $successful++
@@ -416,16 +416,16 @@ function Install-Packages {
             $failed++
         }
     }
-    
+
     # Final display with all results
     Clear-Host
     Show-Banner
     Show-Section "$Type Installation Complete" "done"
-    
+
     foreach ($completed in $completedPackages) {
         Write-Host $completed
     }
-    
+
     Write-Host ""
     Show-Summary -Successful $successful -Failed $failed -Total $total
 }
@@ -469,7 +469,7 @@ $wingetPackages = @(
     'tailscale.tailscale',
     'Valve.Steam',
     'Microsoft.PowerToys',
-    'RadolynLabs.AyuGramDesktop',
+    # 'RadolynLabs.AyuGramDesktop',
     'Microsoft.VisualStudioCode',
     'IPVanish.IPVanish',
     # 'Ferdium.Ferdium',
@@ -483,7 +483,7 @@ $wingetPackages = @(
     # "EpicGames.EpicGamesLauncher",
     "MarkText.MarkText",
     "Amazon.Corretto.24.JDK",
-    'StartIsBack.StartAllBack',
+    # 'StartIsBack.StartAllBack',
     # "BrechtSanders.WinLibs.POSIX.UCRT",
     "LocalSend.LocalSend"
 )
@@ -491,7 +491,8 @@ $wingetPackages = @(
 # Base store packages for all systems
 $storePackages = @(
     '9NKSQGP7F2NH', # Whatsapp
-    '9n0dx20hk701' # Windows Terminal
+    '9n0dx20hk701', # Windows Terminal
+    '9n8g7tscl18r' # Nanazip
 )
 
 # Check if this is an HP system and add HP-specific packages
@@ -499,7 +500,7 @@ Show-Status "Detecting system manufacturer..." "Progress"
 try {
     $manufacturer = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
     Show-Status "System manufacturer: $manufacturer" "Info"
-    
+
     if ($manufacturer -like "*HP*" -or $manufacturer -like "*Hewlett*") {
         Show-Status "HP system detected - adding HP-specific applications" "Success"
         $storePackages += '9P92N00QV14J' # HP Command Center
