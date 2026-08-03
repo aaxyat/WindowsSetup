@@ -1,11 +1,73 @@
-Import-Module PSReadLine
-Set-PSReadLineOption -PredictionSource History
-Set-PSReadLineOption -PredictionSource History
-Set-PSReadLineOption -PredictionViewStyle ListView
-Set-PSReadLineOption -EditMode Windows
-Set-PSReadLineOption -HistorySavePath "P:\ps-history\ConsoleHost_history.txt"
+$profileTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Invoke-Expression (&starship init powershell)
+# Interactive Session Configurations (PSReadLine, Starship, Zoxide, Chocolatey)
+if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsOutputRedirected) {
+    # 1. Fast Initial PSReadLine Setup
+    Set-PSReadLineOption -EditMode Windows -ErrorAction SilentlyContinue
+    Set-PSReadLineOption -HistorySavePath "P:\ps-history\ConsoleHost_history.txt" -ErrorAction SilentlyContinue
+
+    # 2. Lazy Initialization for Heavy Interactive Features (Starship, Zoxide, PSReadLine History Predictor)
+    $global:__lazy_init = {
+        # Starship Prompt Init
+        $starshipCache = Join-Path $env:TEMP 'starship_init_cached.ps1'
+        if (-not (Test-Path $starshipCache)) {
+            if (Get-Command starship -ErrorAction SilentlyContinue) {
+                starship init powershell --print-full-init | Set-Content -Path $starshipCache -Encoding UTF8 -ErrorAction SilentlyContinue
+            }
+        }
+        if (Test-Path $starshipCache) {
+            . $starshipCache
+        }
+
+        # Zoxide Directory Jumper Init
+        $zoxideCache = Join-Path $env:TEMP 'zoxide_init_cached.ps1'
+        if (-not (Test-Path $zoxideCache)) {
+            if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+                zoxide init powershell | Set-Content -Path $zoxideCache -Encoding UTF8 -ErrorAction SilentlyContinue
+            }
+        }
+        if (Test-Path $zoxideCache) {
+            . $zoxideCache
+        }
+
+        # Enable History Prediction (Parses 7800+ history entries)
+        Set-PSReadLineOption -PredictionSource History -PredictionViewStyle ListView -ErrorAction SilentlyContinue
+
+        # Atuin Shell History & Autocomplete Init (Graceful Failure)
+        try {
+            if (Get-Command atuin -ErrorAction SilentlyContinue) {
+                $atuinCache = Join-Path $env:TEMP 'atuin_init_cached.ps1'
+                if (-not (Test-Path $atuinCache)) {
+                    atuin init powershell | Set-Content -Path $atuinCache -Encoding UTF8 -ErrorAction SilentlyContinue
+                }
+                if (Test-Path $atuinCache) {
+                    . $atuinCache
+                }
+            }
+        } catch {
+            # Silently fallback if Atuin initialization encounters any issues
+        }
+    }
+
+    # Hook lazy initialization to first prompt rendering
+    function prompt {
+        if ($global:__lazy_init) {
+            $init = $global:__lazy_init
+            $global:__lazy_init = $null
+            & $init
+            return prompt
+        }
+        return "PS $($ExecutionContext.SessionState.Path.CurrentLocation)> "
+    }
+
+    # 3. Chocolatey Tab Completion Profile
+    if ($env:ChocolateyInstall) {
+        $ChocolateyProfile = Join-Path $env:ChocolateyInstall 'helpers\chocolateyProfile.psm1'
+        if (Test-Path $ChocolateyProfile) {
+            Import-Module $ChocolateyProfile -ErrorAction SilentlyContinue
+        }
+    }
+}
 
 function acm {
         param(
@@ -81,12 +143,13 @@ Set-Alias requirements Export-PoetryRequirements
 # a single command is started with admin rights; if not then a new admin instance
 # of PowerShell is started.
 function admin {
+        $shell = (Get-Process -Id $PID).Path
         if ($args.Count -gt 0) {   
-                $argList = "& '" + $args + "'"
-                Start-Process "$psHome\powershell.exe" -Verb runAs -ArgumentList $argList
+                $argList = "& '" + ($args -join ' ') + "'"
+                Start-Process $shell -Verb RunAs -ArgumentList $argList
         }
         else {
-                Start-Process "$psHome\powershell.exe" -Verb runAs
+                Start-Process $shell -Verb RunAs
         }
 }
 
@@ -212,11 +275,16 @@ function Get-PubIP6 {
 
 
 function uptime {
-        Get-WmiObject win32_operatingsystem | Select-Object csname, @{LABEL = 'LastBootUpTime';
-                EXPRESSION                                           = { $_.ConverttoDateTime($_.lastbootuptime) }
+        $os = Get-CimInstance Win32_OperatingSystem
+        $uptime = (Get-Date) - $os.LastBootUpTime
+        [PSCustomObject]@{
+                ComputerName   = $os.CSName
+                LastBootUpTime = $os.LastBootUpTime
+                Uptime         = "{0}d {1}h {2}m" -f $uptime.Days, $uptime.Hours, $uptime.Minutes
         }
 }
 function reload-profile {
+    Remove-Item (Join-Path $env:TEMP 'starship_init_cached.ps1'), (Join-Path $env:TEMP 'zoxide_init_cached.ps1'), (Join-Path $env:TEMP 'atuin_init_cached.ps1') -ErrorAction SilentlyContinue
     @(
         $Profile.AllUsersAllHosts,
         $Profile.AllUsersCurrentHost,
@@ -229,15 +297,11 @@ function reload-profile {
 }
 
 function find-file($name) {
-        Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
-                $place_path = $_.directory
-                Write-Output "${place_path}\${_}"
-        }
+        Get-ChildItem -Recurse -Filter "*$name*" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
 }
 function unzip ($file) {
-        Write-Output("Extracting", $file, "to", $pwd)
-        $fullFile = Get-ChildItem -Path $pwd -Filter .\cove.zip | ForEach-Object { $_.FullName }
-        Expand-Archive -Path $fullFile -DestinationPath $pwd
+        Write-Host "Extracting $file to $pwd" -ForegroundColor Cyan
+        Expand-Archive -Path $file -DestinationPath $pwd -Force
 }
 function grep($regex, $dir) {
         if ( $dir ) {
@@ -261,6 +325,58 @@ function ubuntu {
 function mas {
         Invoke-RestMethod https://get.activated.win | Invoke-Expression
 
+}
+
+function activate {
+    [CmdletBinding()]
+    param()
+
+    # 1. Check for Admin Privileges & Elevate Inline via gsudo/sudo if available
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        Write-Host "💡 Administrator privileges required for activation. Elevating inline..." -ForegroundColor Yellow
+        $shell = (Get-Process -Id $PID).Path
+        if (Get-Command gsudo -ErrorAction SilentlyContinue) {
+            & gsudo $shell -Command "activate"
+            return
+        } elseif (Get-Command sudo -ErrorAction SilentlyContinue) {
+            & sudo $shell -Command "activate"
+            return
+        } else {
+            Start-Process $shell -Verb RunAs -ArgumentList "-NoExit -Command activate"
+            return
+        }
+    }
+
+    # 2. Check curl.exe Availability
+    if (-not (Get-Command curl.exe -ErrorAction SilentlyContinue)) {
+        Write-Error "curl.exe is required for activation downloads."
+        return
+    }
+
+    Write-Host "`n=================================================" -ForegroundColor Cyan
+    Write-Host "     MICROSOFT ACTIVATION SCRIPT (MAS)           " -ForegroundColor Cyan
+    Write-Host "=================================================" -ForegroundColor Cyan
+
+    # 3. Windows HWID Activation
+    Write-Host "`n1/2: Running Windows HWID Activation..." -ForegroundColor Yellow
+    try {
+        & ([ScriptBlock]::Create((curl.exe -s --doh-url https://1.1.1.1/dns-query https://get.activated.win | Out-String))) /HWID
+        Write-Host "✅ Windows HWID activation completed." -ForegroundColor Green
+    } catch {
+        Write-Host "❌ Windows HWID activation error: $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    # 4. Office Ohook Activation
+    Write-Host "`n2/2: Running Office Ohook Activation..." -ForegroundColor Yellow
+    try {
+        & ([ScriptBlock]::Create((curl.exe -s --doh-url https://1.1.1.1/dns-query https://get.activated.win | Out-String))) /Ohook
+        Write-Host "✅ Office Ohook activation completed." -ForegroundColor Green
+    } catch {
+        Write-Host "❌ Office Ohook activation error: $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    Write-Host "`n✨ Activation process finished!" -ForegroundColor Green
 }
 function ctt {
         Invoke-WebRequest -useb https://christitus.com/win | Invoke-Expression
@@ -316,7 +432,6 @@ function Set-DoH {
 
     # Define Cloudflare DoH server addresses
     $DoHServerAddresses = @(
-        "https://dns.cloudflare.com/dns-query",
         "https://dns.cloudflare.com/dns-query"
     )
 
@@ -401,6 +516,7 @@ function update-profile {
         # Save new profile
         if ($newProfile.StatusCode -eq 200) {
             $newProfile.Content | Out-File -FilePath $PROFILE -Force -Encoding UTF8
+            Remove-Item (Join-Path $env:TEMP 'starship_init_cached.ps1'), (Join-Path $env:TEMP 'zoxide_init_cached.ps1'), (Join-Path $env:TEMP 'atuin_init_cached.ps1') -ErrorAction SilentlyContinue
             Write-Host "✅ Profile updated successfully!" -ForegroundColor Green
             Write-Host "🔄 Reloading profile..." -ForegroundColor Yellow
             . $PROFILE
@@ -479,6 +595,8 @@ function s {
         'kali'          = @{desc = 'Open Kali Linux WSL instance'; usage = 'kali'; color = 'Cyan'}
         'ubuntu'        = @{desc = 'Open Ubuntu WSL instance'; usage = 'ubuntu'; color = 'Cyan'}
         'merge-mp4'     = @{desc = 'Merge multiple MP4 files into a single file using ffmpeg'; usage = 'merge-mp4'; color = 'Green'}
+        'atuin'          = @{desc = 'Atuin shell history search and sync utility'; usage = 'atuin search / atuin sync'; color = 'Cyan'}
+        'activate'       = @{desc = 'Run MAS Windows HWID & Office Ohook activation (requires admin)'; usage = 'activate'; color = 'Red'}
     }
 
     if ($command) {
@@ -514,22 +632,10 @@ function s {
     }
 }
 
-# Display welcome message about shortcuts
-Write-Host "`n✨ Welcome! " -ForegroundColor Magenta -NoNewline
-Write-Host "Type " -ForegroundColor White -NoNewline
-Write-Host "s" -ForegroundColor Cyan -NoNewline
-Write-Host " to see all available shortcuts and commands" -ForegroundColor White
-Write-Host ""
-
-# Import the Chocolatey Profile that contains the necessary code to enable
-# tab-completions to function for `choco`.
-# Be aware that if you are missing these lines from your profile, tab completion
-# for `choco` will not function.
-# See https://ch0.co/tab-completion for details.
-$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-if (Test-Path($ChocolateyProfile)) {
-        Import-Module "$ChocolateyProfile"
+if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsOutputRedirected) {
+    $profileTimer.Stop()
+    $loadTimeMs = [math]::Round($profileTimer.Elapsed.TotalMilliseconds, 1)
+    Write-Host "⚡ Profile loaded in ${loadTimeMs} ms`n" -ForegroundColor DarkGray
 }
 
-# This Loads Zoxide
-Invoke-Expression (& { (zoxide init powershell | Out-String) })
+

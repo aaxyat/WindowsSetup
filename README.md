@@ -1,129 +1,85 @@
 <div align="center">
 
-# 🚀 Windows 11 and WSL Setup Script 🚀
+# 🚀 Windows 11 & WSL Environment Setup 🚀
 
-This repository contains scripts and configuration files for setting up Windows 11 and WSL environments.
+Automated, high-performance environment setup scripts and configuration dotfiles for Windows 11 and WSL.
 
 </div>
 
 ---
 
-# Windows Setup
+## ⚡ Quick Start
 
-## 📡 Fetching and Executing the Setup Script 📡
+### 1️⃣ Pre-Setup (Timezone, Hostname & Rotation)
+```powershell
+iwr -useb raw.githubusercontent.com/aaxyat/WindowsSetup/main/presetup.ps1 | iex
+```
 
-To fetch and execute the setup script in PowerShell, open PowerShell and run the following command:
-
+### 2️⃣ System & Profile Setup
 ```powershell
 iwr -useb l.ayushb.com/setup | iex
 ```
 
-This command uses `iwr` (an alias for `Invoke-WebRequest`) to fetch the script from the provided URL and pipes it to `iex` (an alias for `Invoke-Expression`) to execute the fetched script.
-
-# WSL Setup
-
-This repository includes a script to set up Windows Subsystem for Linux (WSL) with common developer tools and configurations.
-
-## What the WSL Setup Script Installs
-
-- apt-fast for accelerated package installation
-- Essential build tools and utilities
-- Fish shell with Oh My Fish and bira theme
-- Fisher plugin manager for Fish
-- Fastfetch (with neofetch alias) for system information
-- Git with personalized configuration
-- Python development tools:
-  - Pyenv for Python version management
-  - Poetry for Python package management
-  - uv for faster Python package installation
-- Node.js development tools:
-  - NVM (Node Version Manager with Fish support)
-  - pnpm for efficient Node package management
-- Convenient directory structure:
-  - ~/Github for GitHub repositories
-  - ~/Projects for development projects
-
-## How to Use the WSL Script
-
-To run the script directly via curl, use:
-
-```bash
-curl -fsSL https://l.ayushb.com/wsl | bash
+### 3️⃣ Package & Apps Installation
+```powershell
+pwsh -File ./install-apps.ps1
 ```
 
-### Manual Installation
+### 4️⃣ Microsoft 365 / Office Setup & Activation
+```powershell
+pwsh -File ./office.ps1
+```
 
-If you prefer to review the script before running it:
+---
 
-1. Download the script:
-   ```bash
-   curl -O https://l.ayushb.com/wsl
-   ```
+## 📜 Scripts Overview
 
-2. Make it executable:
-   ```bash
-   chmod +x wsl-setup.sh
-   ```
+| Script | Purpose & Features |
+| :--- | :--- |
+| **`presetup.ps1`** | Sets timezone (Nepal Standard Time UTC+5:45), hardware-based hostname assignment (`Turing` for HP Envy x360, `Titan` for Gigabyte A520M), and display auto-rotation settings for laptops. |
+| **`script.ps1`** | Main bootstrap script. Installs Chocolatey & PowerShell 7, auto-relaunches in `pwsh`, configures Windows Terminal, Starship prompt, system PATHs, and Astral `uv`. |
+| **`install-apps.ps1`** | Package manager script installing WinGet & Chocolatey packages including Atuin, LocalSend, PowerToys, Steam, VS Code, and development tools. |
+| **`office.ps1`** | Standalone installer for Microsoft 365. Downloads Click-To-Run (C2R) from Microsoft CDN with file integrity checking, fallback to WinGet, and automatic MAS Ohook activation. |
+| **`wsl-setup.sh`** | WSL (Ubuntu) environment setup with Fish shell, Fisher, NVM, Pyenv, Poetry, Astral `uv`, `fastfetch`, and Git credential manager integration. |
 
-3. Run it:
-   ```bash
-   ./wsl-setup.sh
-   ```
+---
 
-### Post-Installation
+## ⚡ PowerShell Profile & Features
 
-After running the script:
-1. Restart your WSL terminal to apply all changes
-2. The script will have set Fish as your default shell
-3. Use the aliases `g` to quickly navigate to ~/Github and `p` to navigate to ~/Projects
-4. Run `fastfetch` or `neofetch` to see your system information
-5. Use pyenv to install Python versions: `pyenv install 3.10.0`
-6. Use Poetry for Python project management: `poetry new my-project`
-7. Use pnpm for Node.js package management: `pnpm install <package>`
-8. Use uv for faster Python package installation: `uv pip install <package>`
+The repository includes an ultra-fast, optimized PowerShell profile ([`Microsoft.PowerShell_profile.ps1`](file:///c:/Users/aaxyat/Documents/Github/WindowsSetup/ConfigFiles/Microsoft.PowerShell_profile.ps1)):
 
-## 📂 Configuration Files 📂
+- **~60 ms Startup Speed**: Uses lazy initialization to defer heavy prompt themes and prediction engines until first prompt render.
+- **Atuin Shell History Sync**: Integrated with Atuin (`Atuinsh.Atuin`) using a compact 10-line inline search UI.
+- **`activate` Function**: Single-command Windows HWID & Office Ohook activation with inline `gsudo` / `sudo` elevation:
+  ```powershell
+  activate
+  ```
+- **Helper Shortcuts (`s`)**: Type `s` to view all custom aliases (`acm`, `lazyg`, `cinst`, `doh`, `merge-mp4`, `atuin`, `activate`).
 
-The `ConfigFiles` directory contains various configuration files that are used by the setup script:
+---
 
-- `Microsoft.PowerShell_profile.ps1`: This is the PowerShell profile file.
-- `settings.json`: This file contains settings for windows terminal.
-- `shortcuts.ahk` and `shortcuts.exe`: These files are used for setting up keyboard shortcuts.
-- `sshd_config`: This is the configuration file for SSH daemon.
-- `starship.toml`: This is the configuration file for Starship, a customizable prompt for any shell.
+## 🔄 Atuin History Import
 
-# 🎯 Development 🎯
+To import your previous PowerShell command history into Atuin's encrypted SQLite database:
 
-## 🛠️ Requirements 🛠️
+```powershell
+atuin import auto
+```
 
-- VirtualBox (Optional)
-- Windows 11 ISO (Optional)
+---
 
-To get a local copy up and running, follow these simple steps:
+## 📂 Configuration Files (`ConfigFiles/`)
 
-1. Clone the repository to your local machine:
+- `Microsoft.PowerShell_profile.ps1`: Optimized PowerShell 7 profile.
+- `settings.json`: Windows Terminal custom color themes & settings.
+- `shortcuts.exe` / `shortcuts.ahk`: AutoHotkey hotkey shortcuts utility.
+- `starship.toml`: Custom Starship cross-shell prompt configuration.
 
-   ```sh
-   git clone https://github.com/aaxyat/WindowsSetup.git
-   ```
+---
 
-2. Navigate to the cloned repository:
+## 🤝 Contributing & License
 
-   ```sh
-   cd WindowsSetup
-   ```
-
-## 🧪 Testing the Setup Script 🧪
-
-Run your setup script and test the environment as needed.
-
-## 🤝 Contributing 🤝
-
-Contributions, issues, and feature requests are welcome! Please read `CONTRIBUTING.md` for details on our code of conduct, and the process for submitting pull requests to us.
-
-## 📝 License 📝
-
-This project is licensed under the terms of the MIT license. See the `LICENSE` file for details.
+Contributions and pull requests are welcome! Licensed under the [MIT License](LICENSE).
 
 <div align="center">
 
