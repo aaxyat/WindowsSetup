@@ -574,7 +574,8 @@ $wingetPackages = @(
     "MarkText.MarkText",
     "Amazon.Corretto.24.JDK",
     "LocalSend.LocalSend",
-    "Atuinsh.Atuin"
+    "Atuinsh.Atuin",
+    "Flow-Launcher.Flow-Launcher"
 )
 
 # Base store packages for all systems
