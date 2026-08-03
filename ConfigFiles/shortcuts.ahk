@@ -62,12 +62,6 @@ SwitchToWindowsTerminalAdmin()
 ^!t::SwitchToWindowsTerminal()
 #t::SwitchToWindowsTerminalAdmin()
 
-; Try to use f12
-
-f12::
-  SendInput, #``
-  return
-
 ; Function to switch to or launch the Bitwarden desktop app
 SwitchToBitwarden()
 {

@@ -1,3 +1,8 @@
+# Global Performance & Ergonomics
+add_newline = false
+command_timeout = 250
+scan_timeout = 10
+
 ## FIRST LINE/ROW: Info & Status
 # First param ─┌
 [username]

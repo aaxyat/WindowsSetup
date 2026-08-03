@@ -29,9 +29,13 @@
             "keys": "alt+shift+d"
         }
     ],
+    "centerOnLaunch": true,
+    "confirmCloseAllTabs": false,
     "copyFormatting": "none",
     "copyOnSelect": false,
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "initialCols": 120,
+    "initialRows": 32,
     "newTabMenu": 
     [
         {
@@ -42,13 +46,23 @@
     {
         "defaults": 
         {
+            "adjustIndistinguishableColors": "indexed",
             "colorScheme": "Dracula",
+            "compatibility.graphicsAPI": "direct3d11",
+            "cursorBlinkMode": "disabled",
+            "cursorShape": "filledBox",
             "font": 
             {
                 "face": "Fira Code",
+                "features": 
+                {
+                    "calt": 1
+                },
                 "size": 10.0
             },
-            "opacity": 60,
+            "opacity": 85,
+            "softwareRendering": false,
+            "startingDirectory": "%USERPROFILE%",
             "tabColor": "#282A36",
             "useAcrylic": true
         },
@@ -332,5 +346,6 @@
             "yellow": "#808000"
         }
     ],
+    "tabWidthMode": "compact",
     "themes": []
 }
