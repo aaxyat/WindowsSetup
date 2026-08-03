@@ -1,7 +1,7 @@
 # Global Performance & Ergonomics
 add_newline = false
-command_timeout = 250
-scan_timeout = 10
+command_timeout = 1000
+scan_timeout = 30
 
 ## FIRST LINE/ROW: Info & Status
 # First param ─┌
@@ -33,6 +33,7 @@ ahead = "⇡${count}"
 diverged = "⇕⇡${ahead_count}⇣${behind_count}"
 behind = "⇣${count}"
 deleted = "x"
+ignore_submodules = true
 
 # Last param in the first line/row
 [cmd_duration]

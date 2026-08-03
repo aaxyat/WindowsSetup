@@ -4,10 +4,12 @@ $profileTimer = [System.Diagnostics.Stopwatch]::StartNew()
 if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsOutputRedirected) {
     # 1. Fast Initial PSReadLine Setup
     Set-PSReadLineOption -EditMode Windows -ErrorAction SilentlyContinue
-    Set-PSReadLineOption -HistorySavePath "P:\ps-history\ConsoleHost_history.txt" -ErrorAction SilentlyContinue
 
     # 2. Lazy Initialization for Heavy Interactive Features (Starship, Zoxide, PSReadLine History Predictor)
     $global:__lazy_init = {
+        # Suppress non-critical Starship warning logs
+        $env:STARSHIP_LOG = 'error'
+
         # Starship Prompt Init
         $starshipCache = Join-Path $env:TEMP 'starship_init_cached.ps1'
         if (-not (Test-Path $starshipCache)) {
@@ -169,6 +171,7 @@ function Edit-Profile {
 function ll { Get-ChildItem -Path $pwd -File }
 function g { Set-Location $HOME\Documents\Github }
 function p { Set-Location $HOME\Documents\Projects }
+function x { Set-Location C:\xampp\htdocs }
 function gcom {
         git add .
         git commit -m "$args"
@@ -282,6 +285,43 @@ function uptime {
                 LastBootUpTime = $os.LastBootUpTime
                 Uptime         = "{0}d {1}h {2}m" -f $uptime.Days, $uptime.Hours, $uptime.Minutes
         }
+}
+
+function sysinfo {
+    $os = Get-CimInstance Win32_OperatingSystem
+    $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+    $cs = Get-CimInstance Win32_ComputerSystem
+    $uptime = (Get-Date) - $os.LastBootUpTime
+
+    $totalRam = [math]::Round($cs.TotalPhysicalMemory / 1GB, 1)
+    $freeRam = [math]::Round($os.FreePhysicalMemory / 1MB, 1)
+    $usedRam = [math]::Round($totalRam - ($freeRam / 1024), 1)
+    $ramPct = [math]::Round(($usedRam / $totalRam) * 100)
+
+    $cDrive = Get-Volume -DriveLetter C -ErrorAction SilentlyContinue
+
+    Write-Host ""
+    Write-Host "  ╔══════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "  ║                             SYSTEM INFORMATION                               ║" -ForegroundColor Cyan
+    Write-Host "  ╠══════════════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+    Write-Host "  ║   Host Name     : $($cs.Name)" -ForegroundColor White
+    Write-Host "  ║   CPU Model     : $($cpu.Name.Trim())" -ForegroundColor White
+    Write-Host "  ║   RAM Usage     : $usedRam GB / $totalRam GB ($ramPct%)" -ForegroundColor Yellow
+    if ($cDrive) {
+        $cFree = [math]::Round($cDrive.SizeRemaining / 1GB, 1)
+        $cTotal = [math]::Round($cDrive.Size / 1GB, 1)
+        Write-Host "  ║   Drive C:\     : $cFree GB free / $cTotal GB total" -ForegroundColor Green
+    }
+    $uptimeStr = "{0}d {1}h {2}m" -f $uptime.Days, $uptime.Hours, $uptime.Minutes
+    Write-Host "  ║   Uptime        : $uptimeStr" -ForegroundColor Cyan
+    Write-Host "  ╚══════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+}
+
+function flushdns {
+    Write-Host "Flushing DNS resolver cache..." -ForegroundColor Yellow
+    Clear-DnsClientCache
+    Write-Host "DNS resolver cache flushed successfully!" -ForegroundColor Green
 }
 function reload-profile {
     Remove-Item (Join-Path $env:TEMP 'starship_init_cached.ps1'), (Join-Path $env:TEMP 'zoxide_init_cached.ps1'), (Join-Path $env:TEMP 'atuin_init_cached.ps1') -ErrorAction SilentlyContinue
@@ -564,6 +604,9 @@ function s {
         'll'            = @{desc = 'List all files in current directory with detailed information'; usage = 'll'; color = 'Green'}
         'g'             = @{desc = 'Quick navigation to Github projects directory'; usage = 'g'; color = 'DarkYellow'}
         'p'             = @{desc = 'Quick navigation to Projects directory'; usage = 'p'; color = 'DarkYellow'}
+        'x'             = @{desc = 'Quick navigation to XAMPP htdocs directory'; usage = 'x'; color = 'Yellow'}
+        'sysinfo'       = @{desc = 'Display system hardware, RAM, disk, and uptime summary'; usage = 'sysinfo'; color = 'Cyan'}
+        'flushdns'      = @{desc = 'Clear and flush local DNS resolver cache'; usage = 'flushdns'; color = 'Cyan'}
         'gcom'          = @{desc = 'Stage all changes and create a git commit with specified message'; usage = 'gcom "message"'; color = 'DarkYellow'}
         'lazyg'         = @{desc = 'Stage, commit all changes and push to remote git repository'; usage = 'lazyg "message"'; color = 'DarkYellow'}
         'npp'           = @{desc = 'Open specified file in Notepad++ text editor'; usage = 'npp filename'; color = 'Blue'}

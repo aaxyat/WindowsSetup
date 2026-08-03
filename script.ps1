@@ -131,5 +131,26 @@ Write-Host "Installing UV package manager..." -ForegroundColor Yellow
 Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
 Write-Host "UV installation completed." -ForegroundColor Green
 
+# Enable Windows 260-character Long Paths
+Write-Host "Enabling Windows Long Paths support..." -ForegroundColor Yellow
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -Type DWord -ErrorAction SilentlyContinue
+
+# Enable Developer Mode (Unlocks unprivileged symlink creation)
+Write-Host "Enabling Developer Mode..." -ForegroundColor Yellow
+$devModeKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
+if (!(Test-Path $devModeKey)) { New-Item -Path $devModeKey -Force | Out-Null }
+Set-ItemProperty -Path $devModeKey -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -Type DWord -ErrorAction SilentlyContinue
+
+# Configure Global Git Settings
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    Write-Host "Configuring global Git user settings..." -ForegroundColor Yellow
+    git config --global user.name "Ayush Bhattarai"
+    git config --global user.email "git@ayushb.com"
+    git config --global init.defaultBranch main
+    git config --global core.autocrlf input
+    git config --global credential.helper manager
+    Write-Host "Global Git settings configured." -ForegroundColor Green
+}
+
 # Stop the transcript at the end of the script
 Stop-Transcript
