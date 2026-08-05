@@ -102,7 +102,11 @@ success "debi.sh downloaded and verified."
 
 info "Executing debi.sh (Debian re-installation engine)..."
 echo -e "${CYAN}--------------------------------------------------------------------------------${RESET}"
-$SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --timezone Asia/Kathmandu
+if [ -c /dev/tty ]; then
+    $SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --timezone Asia/Kathmandu </dev/tty
+else
+    $SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --timezone Asia/Kathmandu
+fi
 echo -e "${CYAN}--------------------------------------------------------------------------------${RESET}"
 
 echo ""

@@ -27,6 +27,8 @@ item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
 # -------------------------------------------------------------------
 cleanup() {
     local exit_code=$?
+    # Erase password from memory
+    unset USER_PASS USER_PASS_CONFIRM 2>/dev/null || true
     # Terminate background jobs
     jobs -p | xargs -r kill 2>/dev/null || true
     # Clean temporary files
@@ -132,13 +134,32 @@ else
     success "User '${NEW_USER}' created."
 fi
 
-echo -e "\n  ${YELLOW}🔑${RESET}  ${BOLD}Please set the password for user '${NEW_USER}':${RESET}"
-if [ -c /dev/tty ]; then
-    $SUDO passwd "${NEW_USER}" </dev/tty
-else
-    $SUDO passwd "${NEW_USER}"
-fi
-success "Password set for user '${NEW_USER}'."
+echo -e "\n  ${YELLOW}🔑${RESET}  ${BOLD}Set password for user '${NEW_USER}':${RESET}"
+
+while true; do
+    if [ -c /dev/tty ]; then
+        read -rsp "  Enter Password: " USER_PASS </dev/tty
+        echo ""
+        read -rsp "  Confirm Password: " USER_PASS_CONFIRM </dev/tty
+        echo ""
+    else
+        read -rsp "  Enter Password: " USER_PASS
+        echo ""
+        read -rsp "  Confirm Password: " USER_PASS_CONFIRM
+        echo ""
+    fi
+    
+    if [ -z "${USER_PASS}" ]; then
+        warn "Password cannot be empty. Please try again."
+    elif [ "${USER_PASS}" != "${USER_PASS_CONFIRM}" ]; then
+        warn "Passwords do not match. Please try again."
+    else
+        break
+    fi
+done
+
+echo "${NEW_USER}:${USER_PASS}" | $SUDO chpasswd
+success "Password set and verified for user '${NEW_USER}'."
 
 # -------------------------------------------------------------------
 # 2. System Update, Timezone, Packages & Auto-Upgrades
@@ -180,7 +201,11 @@ fi
 success "pwfeedback enabled in sudoers."
 
 info "Installing apt-fast package acceleration tool..."
-$SUDO /bin/bash -c "$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)" >/dev/null 2>&1 || warn "apt-fast installation notice."
+if [ -c /dev/tty ]; then
+    $SUDO /bin/bash -c "$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)" </dev/tty >/dev/null 2>&1 || warn "apt-fast installation notice."
+else
+    $SUDO /bin/bash -c "$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)" >/dev/null 2>&1 || warn "apt-fast installation notice."
+fi
 
 info "Installing core tools via apt-fast (fish, git, nodejs, npm, htop, tmux, nala, btop, micro)..."
 apt_install fish git nodejs npm htop tmux nala btop micro >/dev/null 2>&1 || true
