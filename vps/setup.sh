@@ -52,12 +52,19 @@ error_handler() {
 }
 trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
 
+# Non-interactive frontend for apt package installations
+export DEBIAN_FRONTEND=noninteractive
+
 # Determine sudo requirement (works whether run as root or non-root with sudo)
 if [ "$EUID" -ne 0 ]; then
     if command -v sudo &>/dev/null; then
         SUDO="sudo"
-        # Authenticate up-front and refresh sudo timestamp in background while script runs
-        $SUDO -v
+        # Authenticate up-front from /dev/tty and refresh sudo timestamp in background
+        if [ -c /dev/tty ]; then
+            $SUDO -v </dev/tty
+        else
+            $SUDO -v
+        fi
         ( while true; do $SUDO -n true; sleep 50; kill -0 "$$" || exit; done ) 2>/dev/null &
     else
         error "This script must be run as root or with sudo installed."
@@ -85,11 +92,11 @@ show_progress() {
     local width=32
     local filled=$(( (percent * width) / 100 ))
     local empty=$(( width - filled ))
-
+    
     local bar=""
     for ((i=0; i<filled; i++)); do bar="${bar}█"; done
     for ((i=0; i<empty; i++)); do bar="${bar}░"; done
-
+    
     echo ""
     echo -e "${BLUE}╭──────────────────────────────────────────────────────────────────────────╮${RESET}"
     echo -e "${BLUE}│${RESET} ${BOLD}${WHITE}Step ${step}/${total}${RESET} ${CYAN}➔${RESET} ${BOLD}${YELLOW}${description}${RESET}"
@@ -126,7 +133,11 @@ else
 fi
 
 echo -e "\n  ${YELLOW}🔑${RESET}  ${BOLD}Please set the password for user '${NEW_USER}':${RESET}"
-$SUDO passwd "${NEW_USER}"
+if [ -c /dev/tty ]; then
+    $SUDO passwd "${NEW_USER}" </dev/tty
+else
+    $SUDO passwd "${NEW_USER}"
+fi
 success "Password set for user '${NEW_USER}'."
 
 # -------------------------------------------------------------------
@@ -404,24 +415,24 @@ def get_mem_usage():
 def main():
     allocated_ram = []
     t1_total, t1_idle = get_cpu_usage()
-
+    
     while True:
         time.sleep(3)
         t2_total, t2_idle = get_cpu_usage()
-
+        
         diff_total = t2_total - t1_total
         diff_idle = t2_idle - t1_idle
-
+        
         current_cpu = 100.0 * (1.0 - (diff_idle / diff_total)) if diff_total > 0 else 0.0
         t1_total, t1_idle = t2_total, t2_idle
-
+        
         current_ram = get_mem_usage()
-
+        
         if current_ram < TARGET_RAM:
             allocated_ram.append(bytearray(10 * 1024 * 1024))
         elif current_ram > (TARGET_RAM + 4.0) and len(allocated_ram) > 0:
             allocated_ram.pop()
-
+            
         target_jitter = TARGET_CPU + random.uniform(-1.8, 1.8)
         if current_cpu < target_jitter:
             end_time = time.time() + 1.5

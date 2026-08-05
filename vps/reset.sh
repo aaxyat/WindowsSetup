@@ -49,7 +49,7 @@ cat << "EOF"
   ██╔══██╗██╔════╝██╔════╝██╔════╝╚══██╔══╝    ██║   ██║██╔══██╗██╔════╝
   ██████╔╝█████╗  ███████╗█████╗     ██║       ██║   ██║██████╔╝███████╗
   ██╔══██╗██╔══╝  ╚════██║██╔══╝     ██║       ╚██╗ ██╔╝██╔═══╝ ╚════██║
-  ██║  ██║███████╗███████║███████╗   ██║        ╚████╔╝ ██║     ███████║
+  ██║  ██║███████╗███████║███████╗   ██║        ╚████╔╝ ██║     ███████╗
   ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝   ╚═╝         ╚═══╝  ╚═╝     ╚══════╝
 EOF
 echo -e "${CYAN}             ⚠️  Oracle Cloud VPS OS Re-installation ⚠️${RESET}\n"
@@ -68,7 +68,11 @@ fi
 
 if [[ "$AUTO_CONFIRM" == false ]]; then
     echo -ne "  ${YELLOW}❓${RESET}  ${BOLD}Are you sure you want to proceed with full OS reset? (y/N): ${RESET}"
-    read -r confirm
+    if [ -c /dev/tty ]; then
+        read -r confirm </dev/tty
+    else
+        read -r confirm
+    fi
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         echo ""
         info "Reset cancelled. No changes were made."
@@ -98,7 +102,7 @@ success "debi.sh downloaded and verified."
 
 info "Executing debi.sh (Debian re-installation engine)..."
 echo -e "${CYAN}--------------------------------------------------------------------------------${RESET}"
-$SUDO ./debi.sh --cdn --network-console --ethx --bbr --user root
+$SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --timezone Asia/Kathmandu
 echo -e "${CYAN}--------------------------------------------------------------------------------${RESET}"
 
 echo ""
