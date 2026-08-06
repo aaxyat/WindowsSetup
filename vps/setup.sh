@@ -121,13 +121,23 @@ else
     SUDO=""
 fi
 
-# Package installer helper using apt-fast if available
-apt_install() {
-    if command -v apt-fast &>/dev/null; then
-        $SUDO apt-fast install -y "$@"
-    else
-        $SUDO apt-get install -y "$@"
+# Package installer helper with prioritized fallback: nala -> apt-fast -> apt-get
+pkg_install() {
+    if command -v nala &>/dev/null; then
+        if $SUDO nala install -y "$@"; then
+            return 0
+        fi
+        warn "nala install encountered an issue, falling back to apt-fast / apt-get..."
     fi
+    
+    if command -v apt-fast &>/dev/null; then
+        if $SUDO apt-fast install -y "$@"; then
+            return 0
+        fi
+        warn "apt-fast install encountered an issue, falling back to apt-get..."
+    fi
+    
+    $SUDO apt-get install -y "$@"
 }
 
 # Modern ANSI progress bar renderer
@@ -225,8 +235,8 @@ info "Upgrading system packages..."
 run_boxed "$SUDO apt upgrade -y" || true
 success "System packages updated."
 
-info "Installing prerequisite tools & unattended upgrades..."
-run_boxed "$SUDO apt install -y sudo curl wget lsb-release ca-certificates gnupg unattended-upgrades python3" || true
+info "Installing core package manager prerequisites (nala, sudo, curl, wget, lsb-release, ca-certificates, gnupg, unattended-upgrades, python3)..."
+run_boxed "$SUDO apt-get install -y sudo curl wget lsb-release ca-certificates gnupg unattended-upgrades python3 nala" || true
 
 $SUDO tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null << 'EOF'
 APT::Periodic::Update-Package-Lists "1";
@@ -254,14 +264,14 @@ else
     run_boxed "$SUDO /bin/bash -c \"\$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)\"" || warn "apt-fast installation notice."
 fi
 
-info "Installing core tools via apt-fast (fish, git, nodejs, npm, htop, tmux, nala, btop, micro)..."
-run_boxed "apt_install fish git nodejs npm htop tmux nala btop micro" || true
+info "Installing core tools via package priority chain (nala -> apt-fast -> apt)..."
+run_boxed "pkg_install fish git nodejs npm htop tmux btop micro" || true
 success "Core developer tools installed."
 
 # Install lsd (with fallback)
 if ! command -v lsd &>/dev/null; then
     info "Installing lsd..."
-    run_boxed "apt_install lsd" || {
+    run_boxed "pkg_install lsd" || {
         ARCH=$(dpkg --print-architecture)
         LSD_URL=$(curl -sSL --connect-timeout 15 --retry 3 https://api.github.com/repos/lsd-rs/lsd/releases/latest | grep "browser_download_url.*_${ARCH}.deb" | cut -d '"' -f 4 | head -n 1)
         if [ -n "${LSD_URL:-}" ]; then
@@ -274,7 +284,7 @@ success "lsd installed."
 # Install fastfetch (with fallback)
 if ! command -v fastfetch &>/dev/null; then
     info "Installing fastfetch..."
-    run_boxed "apt_install fastfetch" || {
+    run_boxed "pkg_install fastfetch" || {
         ARCH=$(dpkg --print-architecture)
         FF_URL=$(curl -sSL --connect-timeout 15 --retry 3 https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep "browser_download_url.*linux-${ARCH}.deb" | cut -d '"' -f 4 | head -n 1)
         if [ -n "${FF_URL:-}" ]; then
@@ -376,7 +386,7 @@ $SUDO systemctl restart sshd 2>/dev/null || $SUDO systemctl restart ssh 2>/dev/n
 success "OpenSSH daemon secured and restarted."
 
 info "Configuring UFW Firewall..."
-run_boxed "apt_install ufw" || true
+run_boxed "pkg_install ufw" || true
 $SUDO ufw default deny incoming || true
 $SUDO ufw default allow outgoing || true
 $SUDO ufw allow 22/tcp comment 'SSH' || true
@@ -399,7 +409,7 @@ if ! (
 
     info "Installing prerequisite certificates..."
     run_boxed "$SUDO apt update -y" || true
-    run_boxed "apt_install ca-certificates curl lsb-release" || true
+    run_boxed "pkg_install ca-certificates curl lsb-release" || true
 
     # Setup Docker official GPG key
     $SUDO install -m 0755 -d /etc/apt/keyrings
@@ -422,9 +432,9 @@ if ! (
     run_boxed "$SUDO apt update -y || true"
 
     info "Installing Docker Engine packages..."
-    if ! run_boxed "apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"; then
+    if ! run_boxed "pkg_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"; then
         warn "Official Docker repository install encountered an issue. Falling back to Debian native docker packages..."
-        run_boxed "apt_install docker.io docker-compose-v2 || apt_install docker.io docker-compose || true"
+        run_boxed "pkg_install docker.io docker-compose-v2 || pkg_install docker.io docker-compose || true"
     fi
 
     info "Starting Docker system daemon..."
@@ -470,7 +480,7 @@ show_progress 6 "Dynamic OCI keep-alive daemon (sys-healthd)"
 
 if ! (
     run_boxed "$SUDO apt update -y" || true
-    run_boxed "apt_install supervisor python3" || true
+    run_boxed "pkg_install supervisor python3" || true
 
     KEEPALIVE_SCRIPT="/usr/local/bin/sys-healthd.py"
 
