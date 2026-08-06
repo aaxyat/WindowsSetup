@@ -22,6 +22,16 @@ warn()    { echo -e "  ${YELLOW}⚠${RESET}  $*"; }
 error()   { echo -e "  ${MAGENTA}✖${RESET}  $*"; }
 item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
 
+# Streams command output live inside a neat ASCII border box
+run_boxed() {
+    local cmd="$*"
+    echo -e "  ${BLUE}┌────────────────────────────────────────────────────────────────────────┐${RESET}"
+    eval "$cmd" 2>&1 | sed -u "s/^/  ${BLUE}│${RESET} /"
+    local exit_code=${PIPESTATUS[0]}
+    echo -e "  ${BLUE}└────────────────────────────────────────────────────────────────────────┘${RESET}"
+    return $exit_code
+}
+
 # -------------------------------------------------------------------
 # Error Handling & Cleanup Traps
 # -------------------------------------------------------------------
@@ -114,7 +124,7 @@ cat << "EOF"
  ██╔═══██╗██╔══██╗██╔══██╗██╔════╝██║     ██╔════╝    ██║   ██║██╔══██╗██╔════╝
  ██║   ██║██████╔╝███████║██║     ██║     █████╗      ██║   ██║██████╔╝███████╗
  ██║   ██║██╔══██╗██╔══██║██║     ██║     ██╔══╝      ╚██╗ ██╔╝██╔═══╝ ╚════██║
- ╚██████╔╝██║  ██║██║  ██║╚██████╗███████╗███████╗     ╚████╔╝ ██║     ███████║
+ ╚██████╔╝██║  ██║██║  ██║╚██████╗███████╗███████╗     ╚████╔╝ ██║     ███████╗
   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚══════╝      ╚═══╝  ╚═╝     ╚══════╝
 EOF
 echo -e "${CYAN}             ⚡ Automated Oracle Cloud VPS Setup Engine ⚡${RESET}\n"
@@ -173,13 +183,15 @@ $SUDO timedatectl set-timezone Asia/Kathmandu 2>/dev/null || {
 }
 success "Timezone set to Asia/Kathmandu."
 
-info "Updating package lists and upgrading system..."
-$SUDO apt update -y >/dev/null 2>&1
-$SUDO apt upgrade -y >/dev/null 2>&1
-success "Package lists updated."
+info "Updating package lists..."
+run_boxed "$SUDO apt update -y"
+
+info "Upgrading system packages..."
+run_boxed "$SUDO apt upgrade -y"
+success "System packages updated."
 
 info "Installing prerequisite tools & unattended upgrades..."
-$SUDO apt install -y sudo curl wget lsb-release ca-certificates gnupg unattended-upgrades python3 >/dev/null 2>&1
+run_boxed "$SUDO apt install -y sudo curl wget lsb-release ca-certificates gnupg unattended-upgrades python3"
 
 $SUDO tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null << 'EOF'
 APT::Periodic::Update-Package-Lists "1";
@@ -202,38 +214,38 @@ success "pwfeedback enabled in sudoers."
 
 info "Installing apt-fast package acceleration tool..."
 if [ -c /dev/tty ]; then
-    $SUDO /bin/bash -c "$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)" </dev/tty >/dev/null 2>&1 || warn "apt-fast installation notice."
+    run_boxed "$SUDO /bin/bash -c \"\$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)\" </dev/tty" || warn "apt-fast installation notice."
 else
-    $SUDO /bin/bash -c "$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)" >/dev/null 2>&1 || warn "apt-fast installation notice."
+    run_boxed "$SUDO /bin/bash -c \"\$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)\"" || warn "apt-fast installation notice."
 fi
 
 info "Installing core tools via apt-fast (fish, git, nodejs, npm, htop, tmux, nala, btop, micro)..."
-apt_install fish git nodejs npm htop tmux nala btop micro >/dev/null 2>&1 || true
+run_boxed "apt_install fish git nodejs npm htop tmux nala btop micro" || true
 success "Core developer tools installed."
 
 # Install lsd (with fallback)
 if ! command -v lsd &>/dev/null; then
     info "Installing lsd..."
-    apt_install lsd >/dev/null 2>&1 || {
+    run_boxed "apt_install lsd" || {
         ARCH=$(dpkg --print-architecture)
         LSD_URL=$(curl -sSL --connect-timeout 15 --retry 3 https://api.github.com/repos/lsd-rs/lsd/releases/latest | grep "browser_download_url.*_${ARCH}.deb" | cut -d '"' -f 4 | head -n 1)
         if [ -n "${LSD_URL:-}" ]; then
             curl -sSL --connect-timeout 15 --retry 3 "$LSD_URL" -o /tmp/lsd.deb && $SUDO dpkg -i /tmp/lsd.deb && rm -f /tmp/lsd.deb
         fi
-    } >/dev/null 2>&1 || true
+    } || true
 fi
 success "lsd installed."
 
 # Install fastfetch (with fallback)
 if ! command -v fastfetch &>/dev/null; then
     info "Installing fastfetch..."
-    apt_install fastfetch >/dev/null 2>&1 || {
+    run_boxed "apt_install fastfetch" || {
         ARCH=$(dpkg --print-architecture)
         FF_URL=$(curl -sSL --connect-timeout 15 --retry 3 https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep "browser_download_url.*linux-${ARCH}.deb" | cut -d '"' -f 4 | head -n 1)
         if [ -n "${FF_URL:-}" ]; then
             curl -sSL --connect-timeout 15 --retry 3 "$FF_URL" -o /tmp/fastfetch.deb && $SUDO dpkg -i /tmp/fastfetch.deb && rm -f /tmp/fastfetch.deb
         fi
-    } >/dev/null 2>&1 || true
+    } || true
 fi
 success "fastfetch installed."
 
@@ -246,9 +258,9 @@ if [ -f /swapfile ]; then
     info "Swapfile already exists at /swapfile. Skipping creation."
 else
     info "Allocating 8GB Swapfile at /swapfile..."
-    $SUDO fallocate -l "${SWAP_SIZE}" /swapfile || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=8096
+    run_boxed "$SUDO fallocate -l ${SWAP_SIZE} /swapfile || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=8096"
     $SUDO chmod 0600 /swapfile
-    $SUDO mkswap /swapfile >/dev/null
+    $SUDO mkswap /swapfile
     $SUDO swapon /swapfile
     success "Swapfile created and activated."
 fi
@@ -263,7 +275,7 @@ $SUDO tee /etc/sysctl.d/99-vps-tuning.conf >/dev/null << 'EOF'
 vm.swappiness=10
 vm.vfs_cache_pressure=50
 EOF
-$SUDO sysctl -p /etc/sysctl.d/99-vps-tuning.conf >/dev/null 2>&1 || true
+$SUDO sysctl -p /etc/sysctl.d/99-vps-tuning.conf || true
 success "Kernel memory parameters optimized."
 
 # -------------------------------------------------------------------
@@ -329,56 +341,74 @@ $SUDO systemctl restart sshd 2>/dev/null || $SUDO systemctl restart ssh 2>/dev/n
 success "OpenSSH daemon secured and restarted."
 
 info "Configuring UFW Firewall..."
-apt_install ufw >/dev/null 2>&1
-$SUDO ufw default deny incoming >/dev/null 2>&1
-$SUDO ufw default allow outgoing >/dev/null 2>&1
-$SUDO ufw allow 22/tcp comment 'SSH' >/dev/null 2>&1
-$SUDO ufw allow 80/tcp comment 'HTTP' >/dev/null 2>&1
-$SUDO ufw allow 443/tcp comment 'HTTPS' >/dev/null 2>&1
-$SUDO ufw allow 9000/tcp comment 'Portainer' >/dev/null 2>&1
-$SUDO ufw --force enable >/dev/null 2>&1
+run_boxed "apt_install ufw"
+$SUDO ufw default deny incoming
+$SUDO ufw default allow outgoing
+$SUDO ufw allow 22/tcp comment 'SSH'
+$SUDO ufw allow 80/tcp comment 'HTTP'
+$SUDO ufw allow 443/tcp comment 'HTTPS'
+$SUDO ufw allow 9000/tcp comment 'Portainer'
+$SUDO ufw --force enable
 success "UFW Firewall active (ports 22, 80, 443, 9000 open)."
 
 # -------------------------------------------------------------------
-# 5. Docker Engine, Portainer CE & Maintenance Cron
+# 5. Docker Engine, Portainer CE & Maintenance Cron (Dual x86/ARM)
 # -------------------------------------------------------------------
 show_progress 5 "Docker Engine, Portainer CE & maintenance cron"
 
+info "Removing legacy docker packages..."
 for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do
-    $SUDO apt-get remove -y "$pkg" >/dev/null 2>&1 || true
+    $SUDO apt-get remove -y "$pkg" 2>/dev/null || true
 done
 
-$SUDO apt update -y >/dev/null 2>&1
-apt_install ca-certificates curl lsb-release >/dev/null 2>&1
+info "Installing prerequisite certificates..."
+run_boxed "$SUDO apt update -y"
+run_boxed "apt_install ca-certificates curl lsb-release"
 
+# Setup Docker official GPG key
 $SUDO install -m 0755 -d /etc/apt/keyrings
 $SUDO curl -sSLf --connect-timeout 15 --retry 3 https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 $SUDO chmod a+r /etc/apt/keyrings/docker.asc
 
-DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
-CODENAME=$(lsb_release -cs)
+# Determine architecture (arm64, amd64) and distribution codename
+ARCH=$(dpkg --print-architecture)
+DISTRO=$(lsb_release -is 2>/dev/null | tr '[:upper:]' '[:lower:]' || echo "debian")
+CODENAME=$(lsb_release -cs 2>/dev/null || echo "bookworm")
 
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${DISTRO} ${CODENAME} stable" | $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Fallback for Debian 13 (trixie) or sid where official Docker repo suite folder does not exist yet
+if [[ "$CODENAME" == "trixie" || "$CODENAME" == "sid" || "$CODENAME" == "n/a" || -z "$CODENAME" ]]; then
+    info "Debian testing/trixie detected. Using 'bookworm' suite for Docker repository compatibility..."
+    CODENAME="bookworm"
+fi
 
-$SUDO apt update -y >/dev/null 2>&1
-apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose >/dev/null 2>&1
-success "Docker Engine installed."
+info "Configuring Docker repository for ${DISTRO} (${CODENAME} / ${ARCH})..."
+echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${DISTRO} ${CODENAME} stable" | $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+info "Updating package index..."
+run_boxed "$SUDO apt update -y || true"
+
+info "Installing Docker Engine packages..."
+if ! run_boxed "apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose"; then
+    warn "Official Docker repository install encountered an issue. Falling back to Debian native docker packages..."
+    run_boxed "apt_install docker.io docker-compose || true"
+fi
+success "Docker Engine installed successfully."
 
 $SUDO groupadd -f docker
 $SUDO usermod -aG docker "${NEW_USER}"
 success "User '${NEW_USER}' added to 'docker' group."
 
 info "Deploying Portainer CE container..."
-$SUDO docker volume create portainer_data >/dev/null 2>&1 || true
+$SUDO docker volume create portainer_data || true
 if ! $SUDO docker ps -a | grep -q "portainer"; then
-    $SUDO docker run -d \
+    run_boxed "$SUDO docker run -d \
       -p 8000:8000 \
       -p 9000:9000 \
       --name=portainer \
       --restart=always \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v portainer_data:/data \
-      portainer/portainer-ce >/dev/null 2>&1
+      portainer/portainer-ce"
     success "Portainer CE deployed on port 9000."
 else
     info "Portainer container already running."
@@ -397,8 +427,8 @@ success "Weekly Docker prune cron scheduled."
 # -------------------------------------------------------------------
 show_progress 6 "Dynamic OCI keep-alive daemon (sys-healthd)"
 
-$SUDO apt update -y >/dev/null 2>&1
-apt_install supervisor python3 >/dev/null 2>&1
+run_boxed "$SUDO apt update -y"
+run_boxed "apt_install supervisor python3"
 
 KEEPALIVE_SCRIPT="/usr/local/bin/sys-healthd.py"
 
@@ -484,8 +514,8 @@ EOF
 
 $SUDO rm -f /etc/supervisor/conf.d/stress.conf 2>/dev/null || true
 
-$SUDO supervisorctl reread >/dev/null 2>&1 || true
-$SUDO supervisorctl update >/dev/null 2>&1 || true
+$SUDO supervisorctl reread || true
+$SUDO supervisorctl update || true
 success "Dynamic OCI keep-alive daemon (sys-healthd) active."
 
 $SUDO tee /etc/logrotate.d/sys-healthd >/dev/null << 'EOF'
@@ -517,13 +547,13 @@ fi
 if command -v fish &>/dev/null; then
     info "Installing Oh-My-Fish, 'bira' theme & 'z' plugin for '${NEW_USER}'..."
     if [ "$EUID" -eq 0 ]; then
-        su - "${NEW_USER}" -c "curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive" >/dev/null 2>&1 || true
-        su - "${NEW_USER}" -c "fish -c 'omf install bira'" >/dev/null 2>&1 || true
-        su - "${NEW_USER}" -c "fish -c 'omf install z'" >/dev/null 2>&1 || true
+        run_boxed "su - \"${NEW_USER}\" -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
+        run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install bira'\"" || true
+        run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install z'\"" || true
     else
-        sudo -u "${NEW_USER}" -H bash -c "curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive" >/dev/null 2>&1 || true
-        sudo -u "${NEW_USER}" -H fish -c "omf install bira" >/dev/null 2>&1 || true
-        sudo -u "${NEW_USER}" -H fish -c "omf install z" >/dev/null 2>&1 || true
+        run_boxed "sudo -u \"${NEW_USER}\" -H bash -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
+        run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install bira\"" || true
+        run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install z\"" || true
     fi
     success "Oh-My-Fish, bira theme & z plugin configured."
 fi

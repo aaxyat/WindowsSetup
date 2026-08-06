@@ -17,7 +17,12 @@ success() { echo -e "  ${GREEN}✔${RESET}  $*"; }
 warn()    { echo -e "  ${YELLOW}⚠${RESET}  $*"; }
 error()   { echo -e "  ${MAGENTA}✖${RESET}  $*"; }
 
-# Error handling trap
+# Error handling & Memory cleanup trap
+cleanup() {
+    unset ROOT_PASS ROOT_PASS_CONFIRM 2>/dev/null || true
+}
+trap cleanup EXIT
+
 error_handler() {
     local line_no=$1
     local bash_command=$2
@@ -55,12 +60,48 @@ EOF
 echo -e "${CYAN}             ⚠️  Oracle Cloud VPS OS Re-installation ⚠️${RESET}\n"
 
 echo -e "${YELLOW}╭──────────────────────────────────────────────────────────────────────────╮${RESET}"
-echo -e "${YELLOW}│${RESET} ${BOLD}${WHITE}WARNING: This script will execute debi.sh to re-install Debian 12.${RESET}  ${YELLOW}│${RESET}"
+echo -e "${YELLOW}│${RESET} ${BOLD}${WHITE}WARNING: This script will execute debi.sh to re-install Debian 13.${RESET}  ${YELLOW}│${RESET}"
 echo -e "${YELLOW}│${RESET} ${BOLD}${MAGENTA}ALL DATA AND CUSTOM CONFIGURATIONS ON THIS VPS WILL BE ERASED!${RESET}      ${YELLOW}│${RESET}"
 echo -e "${YELLOW}╰──────────────────────────────────────────────────────────────────────────╯${RESET}"
 echo ""
 
-# Confirmation prompt unless passed -y or --yes flag
+# 1. Prompt for root password with double confirmation
+echo -e "  ${YELLOW}🔑${RESET}  ${BOLD}Set ROOT password for the new Debian installation:${RESET}"
+
+while true; do
+    if [ -c /dev/tty ]; then
+        read -rsp "  Enter Root Password: " ROOT_PASS </dev/tty
+        echo ""
+        read -rsp "  Confirm Root Password: " ROOT_PASS_CONFIRM </dev/tty
+        echo ""
+    else
+        read -rsp "  Enter Root Password: " ROOT_PASS
+        echo ""
+        read -rsp "  Confirm Root Password: " ROOT_PASS_CONFIRM
+        echo ""
+    fi
+    
+    if [ -z "${ROOT_PASS}" ]; then
+        warn "Password cannot be empty. Please try again."
+    elif [ "${ROOT_PASS}" != "${ROOT_PASS_CONFIRM}" ]; then
+        warn "Passwords do not match. Please try again."
+    else
+        break
+    fi
+done
+
+# 2. Display the root password clearly for verification before confirmation
+echo ""
+echo -e "${GREEN}╭──────────────────────────────────────────────────────────────────────────╮${RESET}"
+echo -e "${GREEN}│${RESET} ${BOLD}${WHITE}  IMPORTANT: ROOT PASSWORD VERIFICATION                                  ${RESET}${GREEN}│${RESET}"
+echo -e "${GREEN}├──────────────────────────────────────────────────────────────────────────┤${RESET}"
+echo -e "${GREEN}│${RESET}  ${YELLOW}➔ ROOT PASSWORD:${RESET} ${BOLD}${CYAN}${ROOT_PASS}${RESET}"
+echo -e "${GREEN}│${RESET}                                                                          ${GREEN}│${RESET}"
+echo -e "${GREEN}│${RESET}  ${WHITE}Please write down or copy this password to access root after reboot.${RESET}    ${GREEN}│${RESET}"
+echo -e "${GREEN}╰──────────────────────────────────────────────────────────────────────────╯${RESET}"
+echo ""
+
+# 3. Final confirmation prompt unless passed -y or --yes flag
 AUTO_CONFIRM=false
 if [[ "${1:-}" == "-y" || "${1:-}" == "--yes" ]]; then
     AUTO_CONFIRM=true
@@ -103,9 +144,9 @@ success "debi.sh downloaded and verified."
 info "Executing debi.sh (Debian re-installation engine)..."
 echo -e "${CYAN}--------------------------------------------------------------------------------${RESET}"
 if [ -c /dev/tty ]; then
-    $SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --timezone Asia/Kathmandu </dev/tty
+    $SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --password "${ROOT_PASS}" --timezone Asia/Kathmandu </dev/tty
 else
-    $SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --timezone Asia/Kathmandu
+    $SUDO ./debi.sh --version 13 --cdn --bbr --ethx --user root --password "${ROOT_PASS}" --timezone Asia/Kathmandu
 fi
 echo -e "${CYAN}--------------------------------------------------------------------------------${RESET}"
 
