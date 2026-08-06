@@ -1,79 +1,82 @@
-# Oracle VPS Setup & Reset Automation
+# VPS & WSL Environment Setup Automation
 
-Automated shell scripts for initializing and managing an Oracle Cloud VPS running Debian.
+Automated shell scripts for initializing and managing Oracle Cloud VPS instances and local Windows Subsystem for Linux (WSL) environments.
 
 ## 🚀 Quick Start Guide
 
-### 1. Reset / Re-install VPS OS
-To reset your VPS back to a clean Debian 12 OS using `debi.sh`:
+### 1. Ubuntu WSL One-Command Setup (Local Windows PC)
+To configure your local Ubuntu WSL environment in a single command:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/reset.sh | bash
-# OR run locally:
-bash reset.sh
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/wslsetup.sh | sudo bash
+# OR run locally inside WSL:
+bash wslsetup.sh
 ```
 
 ---
 
-### 2. Full VPS Initial Setup
-Once your VPS reboots after reset, SSH in as `root` and run `setup.sh`:
+### 2. VPS Full Initial Setup (Oracle Cloud / Debian)
+Once your VPS reboots, SSH in as `root` and run `setup.sh`:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/setup.sh | sudo bash
 # OR run locally:
 bash setup.sh
 ```
 
 ---
 
-## 🛠️ What `setup.sh` Configures Automatically
+### 3. Reset / Re-install VPS OS
+To reset your Oracle VPS back to a clean Debian 13 OS using `debi.sh`:
 
-1. **User Management**:
-   - Creates user `aaxyat` with sudo privileges.
-   - Interactively prompts to set user password.
+```bash
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/reset.sh | sudo bash
+# OR run locally:
+bash reset.sh
+```
+
+---
+
+## 🛠️ What `wslsetup.sh` Configures (Optimized for WSL)
+
+1. **User & Sudo Verification**:
+   - Detects active WSL user (`aaxyat`).
    - Enables `pwfeedback` (asterisks `*` when typing sudo passwords).
 
 2. **Package & System Acceleration**:
    - Sets timezone to `Asia/Kathmandu`.
-   - Installs `apt-fast` for multi-threaded parallel package downloads.
-   - Enables `unattended-upgrades` for automated security patches.
+   - **Nala ➔ apt-fast ➔ apt-get** package manager priority chain.
+   - Installs `nala`, `apt-fast`, `git`, `python3`, `curl`, `wget`.
 
-3. **Swap & Kernel Tuning**:
-   - Allocates 8GB persistent Swap file in `/etc/fstab`.
-   - Tunes kernel swappiness (`vm.swappiness=10`, `vm.vfs_cache_pressure=50`).
-
-4. **SSH Security & Lockout Prevention**:
-   - Installs user SSH public key into `/home/aaxyat/.ssh/authorized_keys`.
-   - Enforces strict OpenSSH permissions (`750` home, `700` `.ssh`, `600` `authorized_keys`).
-   - Disables root SSH login (`PermitRootLogin no`) and password authentication (`PasswordAuthentication no`).
-   - Verifies key validity before completing script execution.
-
-5. **UFW Firewall**:
-   - Sets default deny incoming / allow outgoing policies.
-   - Opens ports: `22` (SSH), `80` (HTTP), `443` (HTTPS), `9000` (Portainer).
-
-6. **Docker & Portainer CE**:
+3. **Docker Engine & Portainer CE**:
    - Installs official Docker Engine + Docker Compose.
-   - Adds `aaxyat` to `docker` group.
-   - Deploys Portainer CE container (`http://<vps-ip>:9000`).
-   - Schedules root weekly maintenance cron (`/etc/cron.weekly/docker-prune`).
+   - WSL service compatibility (works seamlessly with systemd or SysV init).
+   - Deploys Portainer CE container (`http://localhost:9000`).
 
-7. **Dynamic OCI Keep-Alive Daemon (`sys-healthd`)**:
-   - Python 3 supervisor service that dynamically calculates system CPU & RAM load.
-   - Only tops up load to ~21% with organic fluctuation if real applications are idle.
-   - Automatically drops to 0% overhead when your Docker apps or web servers are active.
-
-8. **Developer Productivity & Shell Customization**:
+4. **Developer Environment & Shell Customization**:
    - Default shell: **Fish** + **Oh-My-Fish** (`bira` theme + `z` plugin).
-   - **Tmux**: Auto-attaches to persistent session `main` upon SSH login.
-   - Installed CLI tools: `nala`, `btop`, `micro`, `lsd`, `fastfetch`.
-   - Fish Aliases:
-     - `ls` → `lsd`
-     - `neofetch` → `fastfetch`
-     - `ports` → `sudo ss -tulpn`
-     - `update` → `sudo apt update && sudo apt upgrade -y`
-     - `dps` → `docker ps formatted table`
-     - `cls` → `clear`
+   - **Tmux**: Auto-attaches to persistent session `main`.
+   - Developer CLI suite: `nala`, `btop`, `micro`, `lsd`, `fastfetch`.
+   - Fish Aliases (`ls=lsd`, `neofetch=fastfetch`, `ports`, `update`, `dps`, `cls`).
+
+5. **Nala-Style Bounded UI**:
+   - Live command output streaming inside fixed 5-line scrolling ASCII border boxes.
+
+---
+
+## 🖥️ What `setup.sh` Configures (Oracle VPS Production)
+
+1. **User Management**:
+   - Creates user `aaxyat` with sudo privileges and password prompt.
+2. **Swap & Memory Tuning**:
+   - 8GB Swap file allocation + swappiness tuning (`vm.swappiness=10`).
+3. **SSH Hardening & UFW Firewall**:
+   - Key-only SSH auth (`PermitRootLogin no`, `PasswordAuthentication no`).
+   - Opens ports `22`, `80`, `443`, `9000`.
+4. **Dynamic OCI Keep-Alive Daemon (`sys-healthd`)**:
+   - Dynamic load balancer maintaining ~21% CPU/RAM to prevent Oracle reclaim.
+5. **Docker, Portainer & Shell Customizations**:
+   - Fish + OMF `bira` + `z` + `tmux` + Portainer CE.
 
 ---
 
@@ -85,5 +88,9 @@ ssh aaxyat@<YOUR_VPS_IP>
 ```
 Access Portainer dashboard:
 ```text
+# VPS:
 http://<YOUR_VPS_IP>:9000
+
+# WSL:
+http://localhost:9000
 ```
