@@ -22,6 +22,8 @@ warn()    { echo -e "  ${YELLOW}⚠${RESET}  $*"; }
 error()   { echo -e "  ${MAGENTA}✖${RESET}  $*"; }
 item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
 
+export -f info success warn error item 2>/dev/null || true
+
 # Nala-style bounded scrolling box renderer (fixed 5-line window)
 run_boxed() {
     local cmd="$*"
@@ -40,7 +42,7 @@ print(f'  \033[38;5;39m└{\"─\" * box_width}┘\033[0m')
 sys.stdout.write(f'\033[{max_lines + 1}A')
 sys.stdout.flush()
 
-proc = subprocess.Popen('''$cmd''', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+proc = subprocess.Popen('''$cmd''', shell=True, executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
 for line in iter(proc.stdout.readline, ''):
     line_clean = line.strip().replace('\t', ' ')
@@ -120,6 +122,7 @@ if [ "$EUID" -ne 0 ]; then
 else
     SUDO=""
 fi
+export SUDO 2>/dev/null || true
 
 # Package installer helper with prioritized fallback: nala -> apt-fast -> apt-get
 pkg_install() {
@@ -127,18 +130,17 @@ pkg_install() {
         if $SUDO nala install -y "$@"; then
             return 0
         fi
-        warn "nala install encountered an issue, falling back to apt-fast / apt-get..."
     fi
     
     if command -v apt-fast &>/dev/null; then
         if $SUDO apt-fast install -y "$@"; then
             return 0
         fi
-        warn "apt-fast install encountered an issue, falling back to apt-get..."
     fi
     
     $SUDO apt-get install -y "$@"
 }
+export -f pkg_install 2>/dev/null || true
 
 # Modern ANSI progress bar renderer
 show_progress() {
