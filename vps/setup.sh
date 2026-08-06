@@ -22,14 +22,49 @@ warn()    { echo -e "  ${YELLOW}⚠${RESET}  $*"; }
 error()   { echo -e "  ${MAGENTA}✖${RESET}  $*"; }
 item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
 
-# Streams command output live inside a neat ASCII border box
+# Nala-style bounded scrolling box renderer (fixed 5-line window)
 run_boxed() {
     local cmd="$*"
-    echo -e "  ${BLUE}┌────────────────────────────────────────────────────────────────────────┐${RESET}"
-    eval "$cmd" 2>&1 | sed -u "s/^/  ${BLUE}│${RESET} /"
-    local exit_code=${PIPESTATUS[0]}
-    echo -e "  ${BLUE}└────────────────────────────────────────────────────────────────────────┘${RESET}"
-    return $exit_code
+    if command -v python3 &>/dev/null; then
+        python3 -c "
+import sys, subprocess
+
+box_width = 74
+max_lines = 5
+buffer = ['' for _ in range(max_lines)]
+
+print(f'  \033[38;5;39m┌{\"─\" * box_width}┐\033[0m')
+for _ in range(max_lines):
+    print(f'  \033[38;5;39m│\033[0m {\" \":<{box_width - 2}} \033[38;5;39m│\033[0m')
+print(f'  \033[38;5;39m└{\"─\" * box_width}┘\033[0m')
+sys.stdout.write(f'\033[{max_lines + 1}A')
+sys.stdout.flush()
+
+proc = subprocess.Popen('''$cmd''', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+
+for line in iter(proc.stdout.readline, ''):
+    line_clean = line.strip().replace('\t', ' ')
+    if not line_clean:
+        continue
+    if len(line_clean) > (box_width - 4):
+        line_clean = line_clean[:box_width - 7] + '...'
+    
+    buffer.pop(0)
+    buffer.append(line_clean)
+    
+    sys.stdout.write(f'\033[{max_lines}A')
+    for b in buffer:
+        sys.stdout.write(f'\r  \033[38;5;39m│\033[0m  {b:<{box_width - 4}}  \033[38;5;39m│\033[0m\n')
+    sys.stdout.flush()
+
+proc.stdout.close()
+rc = proc.wait()
+sys.stdout.write(f'\033[1B\r')
+sys.exit(rc)
+" 2>/dev/null || eval "$cmd" >/dev/null 2>&1
+    else
+        eval "$cmd" >/dev/null 2>&1
+    fi
 }
 
 # -------------------------------------------------------------------
@@ -184,14 +219,14 @@ $SUDO timedatectl set-timezone Asia/Kathmandu 2>/dev/null || {
 success "Timezone set to Asia/Kathmandu."
 
 info "Updating package lists..."
-run_boxed "$SUDO apt update -y"
+run_boxed "$SUDO apt update -y" || true
 
 info "Upgrading system packages..."
-run_boxed "$SUDO apt upgrade -y"
+run_boxed "$SUDO apt upgrade -y" || true
 success "System packages updated."
 
 info "Installing prerequisite tools & unattended upgrades..."
-run_boxed "$SUDO apt install -y sudo curl wget lsb-release ca-certificates gnupg unattended-upgrades python3"
+run_boxed "$SUDO apt install -y sudo curl wget lsb-release ca-certificates gnupg unattended-upgrades python3" || true
 
 $SUDO tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null << 'EOF'
 APT::Periodic::Update-Package-Lists "1";
@@ -258,10 +293,10 @@ if [ -f /swapfile ]; then
     info "Swapfile already exists at /swapfile. Skipping creation."
 else
     info "Allocating 8GB Swapfile at /swapfile..."
-    run_boxed "$SUDO fallocate -l ${SWAP_SIZE} /swapfile || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=8096"
-    $SUDO chmod 0600 /swapfile
-    $SUDO mkswap /swapfile
-    $SUDO swapon /swapfile
+    run_boxed "$SUDO fallocate -l ${SWAP_SIZE} /swapfile || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=8096" || true
+    $SUDO chmod 0600 /swapfile 2>/dev/null || true
+    $SUDO mkswap /swapfile 2>/dev/null || true
+    $SUDO swapon /swapfile 2>/dev/null || true
     success "Swapfile created and activated."
 fi
 
@@ -341,99 +376,106 @@ $SUDO systemctl restart sshd 2>/dev/null || $SUDO systemctl restart ssh 2>/dev/n
 success "OpenSSH daemon secured and restarted."
 
 info "Configuring UFW Firewall..."
-run_boxed "apt_install ufw"
-$SUDO ufw default deny incoming
-$SUDO ufw default allow outgoing
-$SUDO ufw allow 22/tcp comment 'SSH'
-$SUDO ufw allow 80/tcp comment 'HTTP'
-$SUDO ufw allow 443/tcp comment 'HTTPS'
-$SUDO ufw allow 9000/tcp comment 'Portainer'
-$SUDO ufw --force enable
+run_boxed "apt_install ufw" || true
+$SUDO ufw default deny incoming || true
+$SUDO ufw default allow outgoing || true
+$SUDO ufw allow 22/tcp comment 'SSH' || true
+$SUDO ufw allow 80/tcp comment 'HTTP' || true
+$SUDO ufw allow 443/tcp comment 'HTTPS' || true
+$SUDO ufw allow 9000/tcp comment 'Portainer' || true
+$SUDO ufw --force enable || true
 success "UFW Firewall active (ports 22, 80, 443, 9000 open)."
 
 # -------------------------------------------------------------------
-# 5. Docker Engine, Portainer CE & Maintenance Cron (Dual x86/ARM)
+# 5. Docker Engine, Portainer CE & Maintenance Cron (Fault-Tolerant)
 # -------------------------------------------------------------------
 show_progress 5 "Docker Engine, Portainer CE & maintenance cron"
 
-info "Removing legacy docker packages..."
-for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do
-    $SUDO apt-get remove -y "$pkg" 2>/dev/null || true
-done
+if ! (
+    set -e
+    info "Cleaning up conflicting legacy docker packages..."
+    $SUDO apt-get remove -y --purge docker.io docker-doc docker-compose podman-docker containerd runc docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin 2>/dev/null || true
+    $SUDO apt-get autoremove -y 2>/dev/null || true
 
-info "Installing prerequisite certificates..."
-run_boxed "$SUDO apt update -y"
-run_boxed "apt_install ca-certificates curl lsb-release"
+    info "Installing prerequisite certificates..."
+    run_boxed "$SUDO apt update -y" || true
+    run_boxed "apt_install ca-certificates curl lsb-release" || true
 
-# Setup Docker official GPG key
-$SUDO install -m 0755 -d /etc/apt/keyrings
-$SUDO curl -sSLf --connect-timeout 15 --retry 3 https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-$SUDO chmod a+r /etc/apt/keyrings/docker.asc
+    # Setup Docker official GPG key
+    $SUDO install -m 0755 -d /etc/apt/keyrings
+    $SUDO curl -sSLf --connect-timeout 15 --retry 3 https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc 2>/dev/null || true
+    $SUDO chmod a+r /etc/apt/keyrings/docker.asc 2>/dev/null || true
 
-# Determine architecture (arm64, amd64) and distribution codename
-ARCH=$(dpkg --print-architecture)
-DISTRO=$(lsb_release -is 2>/dev/null | tr '[:upper:]' '[:lower:]' || echo "debian")
-CODENAME=$(lsb_release -cs 2>/dev/null || echo "bookworm")
+    ARCH=$(dpkg --print-architecture)
+    DISTRO=$(lsb_release -is 2>/dev/null | tr '[:upper:]' '[:lower:]' || echo "debian")
+    CODENAME=$(lsb_release -cs 2>/dev/null || echo "bookworm")
 
-# Fallback for Debian 13 (trixie) or sid where official Docker repo suite folder does not exist yet
-if [[ "$CODENAME" == "trixie" || "$CODENAME" == "sid" || "$CODENAME" == "n/a" || -z "$CODENAME" ]]; then
-    info "Debian testing/trixie detected. Using 'bookworm' suite for Docker repository compatibility..."
-    CODENAME="bookworm"
-fi
+    if [[ "$CODENAME" == "trixie" || "$CODENAME" == "sid" || "$CODENAME" == "n/a" || -z "$CODENAME" ]]; then
+        info "Debian testing/trixie detected. Using 'bookworm' suite for Docker repository compatibility..."
+        CODENAME="bookworm"
+    fi
 
-info "Configuring Docker repository for ${DISTRO} (${CODENAME} / ${ARCH})..."
-echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${DISTRO} ${CODENAME} stable" | $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+    info "Configuring Docker repository for ${DISTRO} (${CODENAME} / ${ARCH})..."
+    echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${DISTRO} ${CODENAME} stable" | $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-info "Updating package index..."
-run_boxed "$SUDO apt update -y || true"
+    info "Updating package index..."
+    run_boxed "$SUDO apt update -y || true"
 
-info "Installing Docker Engine packages..."
-if ! run_boxed "apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose"; then
-    warn "Official Docker repository install encountered an issue. Falling back to Debian native docker packages..."
-    run_boxed "apt_install docker.io docker-compose || true"
-fi
-success "Docker Engine installed successfully."
+    info "Installing Docker Engine packages..."
+    if ! run_boxed "apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"; then
+        warn "Official Docker repository install encountered an issue. Falling back to Debian native docker packages..."
+        run_boxed "apt_install docker.io docker-compose-v2 || apt_install docker.io docker-compose || true"
+    fi
 
-$SUDO groupadd -f docker
-$SUDO usermod -aG docker "${NEW_USER}"
-success "User '${NEW_USER}' added to 'docker' group."
+    info "Starting Docker system daemon..."
+    $SUDO systemctl unmask docker 2>/dev/null || true
+    $SUDO systemctl enable --now docker 2>/dev/null || true
+    $SUDO systemctl restart docker 2>/dev/null || true
+    success "Docker Engine installed and daemon active."
 
-info "Deploying Portainer CE container..."
-$SUDO docker volume create portainer_data || true
-if ! $SUDO docker ps -a | grep -q "portainer"; then
-    run_boxed "$SUDO docker run -d \
-      -p 8000:8000 \
-      -p 9000:9000 \
-      --name=portainer \
-      --restart=always \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      -v portainer_data:/data \
-      portainer/portainer-ce"
-    success "Portainer CE deployed on port 9000."
-else
-    info "Portainer container already running."
-fi
+    $SUDO groupadd -f docker
+    $SUDO usermod -aG docker "${NEW_USER}"
 
-info "Configuring weekly Docker prune cron..."
-$SUDO tee /etc/cron.weekly/docker-prune >/dev/null << 'EOF'
+    info "Deploying Portainer CE container..."
+    $SUDO docker volume create portainer_data || true
+    if ! $SUDO docker ps -a | grep -q "portainer"; then
+        run_boxed "$SUDO docker run -d \
+          -p 8000:8000 \
+          -p 9000:9000 \
+          --name=portainer \
+          --restart=always \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v portainer_data:/data \
+          portainer/portainer-ce"
+        success "Portainer CE deployed on port 9000."
+    else
+        info "Portainer container already running."
+    fi
+
+    info "Configuring weekly Docker prune cron..."
+    $SUDO tee /etc/cron.weekly/docker-prune >/dev/null << 'EOF'
 #!/usr/bin/env bash
 /usr/bin/docker system prune -af --volumes > /var/log/docker-prune.log 2>&1
 EOF
-$SUDO chmod +x /etc/cron.weekly/docker-prune
-success "Weekly Docker prune cron scheduled."
+    $SUDO chmod +x /etc/cron.weekly/docker-prune
+    success "Weekly Docker prune cron scheduled."
+); then
+    warn "Notice: Docker Engine or Portainer setup encountered an issue. Continuing with remaining VPS setup..."
+fi
 
 # -------------------------------------------------------------------
 # 6. Dynamic OCI Keep-Alive Daemon (Supervisor & Python)
 # -------------------------------------------------------------------
 show_progress 6 "Dynamic OCI keep-alive daemon (sys-healthd)"
 
-run_boxed "$SUDO apt update -y"
-run_boxed "apt_install supervisor python3"
+if ! (
+    run_boxed "$SUDO apt update -y" || true
+    run_boxed "apt_install supervisor python3" || true
 
-KEEPALIVE_SCRIPT="/usr/local/bin/sys-healthd.py"
+    KEEPALIVE_SCRIPT="/usr/local/bin/sys-healthd.py"
 
-info "Installing dynamic load balancer (/usr/local/bin/sys-healthd.py)..."
-$SUDO tee "${KEEPALIVE_SCRIPT}" >/dev/null << 'EOF'
+    info "Installing dynamic load balancer (/usr/local/bin/sys-healthd.py)..."
+    $SUDO tee "${KEEPALIVE_SCRIPT}" >/dev/null << 'EOF'
 #!/usr/bin/env python3
 import time
 import os
@@ -498,10 +540,10 @@ if __name__ == '__main__':
     main()
 EOF
 
-$SUDO chmod +x "${KEEPALIVE_SCRIPT}"
+    $SUDO chmod +x "${KEEPALIVE_SCRIPT}"
 
-KEEPALIVE_CONF="/etc/supervisor/conf.d/sys-healthd.conf"
-$SUDO tee "${KEEPALIVE_CONF}" >/dev/null << 'EOF'
+    KEEPALIVE_CONF="/etc/supervisor/conf.d/sys-healthd.conf"
+    $SUDO tee "${KEEPALIVE_CONF}" >/dev/null << 'EOF'
 [program:sys-healthd]
 command=/usr/bin/python3 /usr/local/bin/sys-healthd.py
 directory=/usr/local/bin
@@ -512,13 +554,13 @@ redirect_stderr=true
 stdout_logfile=/var/log/sys-healthd.log
 EOF
 
-$SUDO rm -f /etc/supervisor/conf.d/stress.conf 2>/dev/null || true
+    $SUDO rm -f /etc/supervisor/conf.d/stress.conf 2>/dev/null || true
 
-$SUDO supervisorctl reread || true
-$SUDO supervisorctl update || true
-success "Dynamic OCI keep-alive daemon (sys-healthd) active."
+    $SUDO supervisorctl reread || true
+    $SUDO supervisorctl update || true
+    success "Dynamic OCI keep-alive daemon (sys-healthd) active."
 
-$SUDO tee /etc/logrotate.d/sys-healthd >/dev/null << 'EOF'
+    $SUDO tee /etc/logrotate.d/sys-healthd >/dev/null << 'EOF'
 /var/log/sys-healthd.log {
     weekly
     missingok
@@ -528,70 +570,77 @@ $SUDO tee /etc/logrotate.d/sys-healthd >/dev/null << 'EOF'
     maxsize 10M
 }
 EOF
-success "sys-healthd logrotate configured."
+    success "sys-healthd logrotate configured."
+); then
+    warn "Notice: sys-healthd daemon setup encountered an issue. Continuing with remaining VPS setup..."
+fi
 
 # -------------------------------------------------------------------
 # 7. Shell Customization (Fish, OMF, bira, z, lsd, btop, micro & Tmux)
 # -------------------------------------------------------------------
 show_progress 7 "Fish shell, Oh-My-Fish, themes, aliases & Tmux session"
 
-BASHRC_FILE="${USER_HOME}/.bashrc"
-if [ -f "${BASHRC_FILE}" ]; then
-    if ! grep -q "fish" "${BASHRC_FILE}"; then
-        echo "fish" >> "${BASHRC_FILE}"
-        $SUDO chown "${NEW_USER}:${NEW_USER}" "${BASHRC_FILE}"
-        success "Fish auto-start added to .bashrc."
+if ! (
+    BASHRC_FILE="${USER_HOME}/.bashrc"
+    if [ -f "${BASHRC_FILE}" ]; then
+        if ! grep -q "fish" "${BASHRC_FILE}"; then
+            echo "fish" >> "${BASHRC_FILE}"
+            $SUDO chown "${NEW_USER}:${NEW_USER}" "${BASHRC_FILE}"
+            success "Fish auto-start added to .bashrc."
+        fi
     fi
-fi
 
-if command -v fish &>/dev/null; then
-    info "Installing Oh-My-Fish, 'bira' theme & 'z' plugin for '${NEW_USER}'..."
-    if [ "$EUID" -eq 0 ]; then
-        run_boxed "su - \"${NEW_USER}\" -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
-        run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install bira'\"" || true
-        run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install z'\"" || true
-    else
-        run_boxed "sudo -u \"${NEW_USER}\" -H bash -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
-        run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install bira\"" || true
-        run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install z\"" || true
+    if command -v fish &>/dev/null; then
+        info "Installing Oh-My-Fish, 'bira' theme & 'z' plugin for '${NEW_USER}'..."
+        if [ "$EUID" -eq 0 ]; then
+            run_boxed "su - \"${NEW_USER}\" -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
+            run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install bira'\"" || true
+            run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install z'\"" || true
+        else
+            run_boxed "sudo -u \"${NEW_USER}\" -H bash -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
+            run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install bira\"" || true
+            run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install z\"" || true
+        fi
+        success "Oh-My-Fish, bira theme & z plugin configured."
     fi
-    success "Oh-My-Fish, bira theme & z plugin configured."
-fi
 
-FISH_CONF_DIR="${USER_HOME}/.config/fish"
-FISH_CONF_FILE="${FISH_CONF_DIR}/config.fish"
+    FISH_CONF_DIR="${USER_HOME}/.config/fish"
+    FISH_CONF_FILE="${FISH_CONF_DIR}/config.fish"
 
-$SUDO mkdir -p "${FISH_CONF_DIR}"
+    $SUDO mkdir -p "${FISH_CONF_DIR}"
 
-if ! $SUDO grep -q "alias neofetch" "${FISH_CONF_FILE}" 2>/dev/null; then
-    echo "alias neofetch=fastfetch" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
-fi
+    if ! $SUDO grep -q "alias neofetch" "${FISH_CONF_FILE}" 2>/dev/null; then
+        echo "alias neofetch=fastfetch" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
+    fi
 
-if ! $SUDO grep -q "alias ls=lsd" "${FISH_CONF_FILE}" 2>/dev/null; then
-    $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null << 'EOF'
+    if ! $SUDO grep -q "alias ls=lsd" "${FISH_CONF_FILE}" 2>/dev/null; then
+        $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null << 'EOF'
 alias ls=lsd
 alias l='lsd -l'
 alias la='lsd -a'
 alias ll='lsd -la'
 alias lt='lsd --tree'
 EOF
-fi
+    fi
 
-if ! $SUDO grep -q "alias ports" "${FISH_CONF_FILE}" 2>/dev/null; then
-    $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null << 'EOF'
+    if ! $SUDO grep -q "alias ports" "${FISH_CONF_FILE}" 2>/dev/null; then
+        $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null << 'EOF'
 alias ports='sudo ss -tulpn'
 alias update='sudo apt update && sudo apt upgrade -y'
 alias dps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
 alias cls='clear'
 EOF
-fi
+    fi
 
-if ! $SUDO grep -q "tmux new-session" "${FISH_CONF_FILE}" 2>/dev/null; then
-    echo "" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
-    echo "# Auto-attach to existing tmux session 'main' or create a new one" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
-    echo "if status is-interactive; and not set -q TMUX; exec tmux new-session -A -s main; end" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
+    if ! $SUDO grep -q "tmux new-session" "${FISH_CONF_FILE}" 2>/dev/null; then
+        echo "" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
+        echo "# Auto-attach to existing tmux session 'main' or create a new one" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
+        echo "if status is-interactive; and not set -q TMUX; exec tmux new-session -A -s main; end" | $SUDO tee -a "${FISH_CONF_FILE}" >/dev/null
+    fi
+    success "Fish shell aliases and tmux auto-attach configured."
+); then
+    warn "Notice: Shell customization encountered an issue. Continuing with remaining VPS setup..."
 fi
-success "Fish shell aliases and tmux auto-attach configured."
 
 # -------------------------------------------------------------------
 # 8. Final Security & Lockout Prevention Verification
