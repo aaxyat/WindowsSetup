@@ -24,7 +24,7 @@ item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
 
 export -f info success warn error item 2>/dev/null || true
 
-# Nala-style bounded scrolling box renderer (fixed 5-line window)
+# Nala-style bounded scrolling box renderer (fixed 5-line window with clean line erase)
 run_boxed() {
     local cmd="$*"
     if command -v python3 &>/dev/null; then
@@ -35,10 +35,10 @@ box_width = 74
 max_lines = 5
 buffer = ['' for _ in range(max_lines)]
 
-print(f'  \033[38;5;39m┌{\"─\" * box_width}┐\033[0m')
+print(f'  \033[38;5;39m┌{\"─\" * box_width}┐\033[0m\033[K')
 for _ in range(max_lines):
-    print(f'  \033[38;5;39m│\033[0m {\" \":<{box_width - 2}} \033[38;5;39m│\033[0m')
-print(f'  \033[38;5;39m└{\"─\" * box_width}┘\033[0m')
+    print(f'  \033[38;5;39m│\033[0m {\" \":<{box_width - 2}} \033[38;5;39m│\033[0m\033[K')
+print(f'  \033[38;5;39m└{\"─\" * box_width}┘\033[0m\033[K')
 sys.stdout.write(f'\033[{max_lines + 1}A')
 sys.stdout.flush()
 
@@ -56,7 +56,7 @@ for line in iter(proc.stdout.readline, ''):
     
     sys.stdout.write(f'\033[{max_lines}A')
     for b in buffer:
-        sys.stdout.write(f'\r  \033[38;5;39m│\033[0m  {b:<{box_width - 4}}  \033[38;5;39m│\033[0m\n')
+        sys.stdout.write(f'\r\033[K  \033[38;5;39m│\033[0m  {b:<{box_width - 4}}  \033[38;5;39m│\033[0m\033[K\n')
     sys.stdout.flush()
 
 proc.stdout.close()
@@ -255,14 +255,19 @@ info "Upgrading system packages..."
 run_boxed "$SUDO apt upgrade -y" || true
 success "System packages updated."
 
-info "Installing core package manager prerequisites (nala, sudo, curl, wget, lsb-release, ca-certificates, gnupg, python3)..."
-run_boxed "$SUDO apt-get install -y sudo curl wget lsb-release ca-certificates gnupg python3 nala" || true
+info "Installing core package manager prerequisites (nala, sudo, curl, wget, lsb-release, ca-certificates, gnupg, python3, aria2)..."
+run_boxed "$SUDO apt-get install -y sudo curl wget lsb-release ca-certificates gnupg python3 nala aria2" || true
 
-info "Installing apt-fast package acceleration tool..."
-if [ -c /dev/tty ]; then
-    run_boxed "$SUDO /bin/bash -c \"\$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)\" </dev/tty" || warn "apt-fast installation notice."
-else
-    run_boxed "$SUDO /bin/bash -c \"\$(curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/ilikenwf/apt-fast/master/quick-install.sh)\"" || warn "apt-fast installation notice."
+# Non-interactive apt-fast setup
+if ! command -v apt-fast &>/dev/null; then
+    info "Installing apt-fast package acceleration tool..."
+    $SUDO wget -q https://raw.githubusercontent.com/ilikenwf/apt-fast/master/apt-fast -O /usr/local/bin/apt-fast 2>/dev/null || true
+    $SUDO chmod +x /usr/local/bin/apt-fast 2>/dev/null || true
+    $SUDO tee /etc/apt-fast.conf >/dev/null << 'EOF'
+DOWNLOADER="aria2c -s 5 -m 5 -k 1m -x 5"
+MAXNUM=5
+EOF
+    success "apt-fast package acceleration tool configured."
 fi
 
 info "Installing core tools via package priority chain (nala -> apt-fast -> apt)..."
