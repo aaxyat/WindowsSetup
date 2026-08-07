@@ -47,12 +47,13 @@ update_windows_hosts() {
         if [ -w "$WIN_HOSTS" ]; then
             if ! grep -q -w "${domain}" "$WIN_HOSTS" 2>/dev/null; then
                 echo -e "\n127.0.0.1  ${domain}" >> "$WIN_HOSTS"
-                success "Added '127.0.0.1  ${domain}' to Windows hosts file."
+                echo -e "::1        ${domain}" >> "$WIN_HOSTS"
+                success "Added '127.0.0.1' & '::1' entries for '${domain}' to Windows hosts file."
             fi
         else
             warn "Windows hosts file requires write permissions for automatic updates."
-            echo -e "  ${WHITE}Run this ONE-TIME command in Windows PowerShell (as Admin):${RESET}"
-            echo -e "  ${YELLOW}icacls C:\\Windows\\System32\\drivers\\etc\\hosts /grant Users:(M)${RESET}\n"
+            echo -e "  ${WHITE}Run this ONE-TIME shortcut command in Windows PowerShell:${RESET}"
+            echo -e "  ${YELLOW}wslmap${RESET}\n"
         fi
     fi
 }

@@ -239,6 +239,8 @@ fi
 # -------------------------------------------------------------------
 show_progress 1 "Configuring user privileges, passwordless sudo & timezone"
 
+$SUDO chmod 755 "${USER_HOME}"
+
 info "Setting system timezone to Asia/Kathmandu..."
 $SUDO timedatectl set-timezone Asia/Kathmandu 2>/dev/null || {
     echo "Asia/Kathmandu" | $SUDO tee /etc/timezone >/dev/null

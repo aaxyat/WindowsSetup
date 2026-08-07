@@ -191,6 +191,7 @@ $SUDO mkdir -p "${PROJECTS_DIR}/erp"
 $SUDO mkdir -p "${PROJECTS_DIR}/college"
 
 # Set ownership to current user and www-data group with 775 permissions
+$SUDO chmod 755 "${USER_HOME}"
 $SUDO usermod -aG www-data "${CURRENT_USER}" 2>/dev/null || true
 $SUDO chown -R "${CURRENT_USER}:www-data" "${USER_HOME}/projects"
 $SUDO chmod -R 775 "${USER_HOME}/projects"
