@@ -69,13 +69,15 @@ remove_windows_hosts() {
 show_help() {
     echo -e "${MAGENTA}${BOLD}🌐 WSL PHP Virtual Host Manager (newsite)${RESET}\n"
     echo -e "${WHITE}Usage:${RESET}"
-    echo -e "  ${CYAN}newsite <folder> [domain]${RESET}    Create a Virtual Host in ~/projects/php/<folder>"
-    echo -e "  ${CYAN}newsite --list \| list${RESET}       List all configured Virtual Host sites"
-    echo -e "  ${CYAN}newsite --delete <name>${RESET}     Delete a Virtual Host site (e.g., newsite --delete mims)"
-    echo -e "  ${CYAN}newsite --help \| help${RESET}       Show this help message\n"
+    echo -e "  ${CYAN}newsite <sitename> [path]${RESET}  Create site for relative/absolute path (default: ~/projects/php/<sitename>)"
+    echo -e "  ${CYAN}newsite .${RESET}                 Create site using current directory name as sitename"
+    echo -e "  ${CYAN}newsite --list \| list${RESET}     List all configured Virtual Host sites"
+    echo -e "  ${CYAN}newsite --delete <name>${RESET}   Delete a Virtual Host site (e.g., newsite --delete mims)"
+    echo -e "  ${CYAN}newsite --help \| help${RESET}     Show this help message\n"
     echo -e "${WHITE}Examples:${RESET}"
-    echo -e "  ${YELLOW}newsite mims${RESET}        ➔ ~/projects/php/mims points to http://mims.local"
-    echo -e "  ${YELLOW}newsite mims ims${RESET}    ➔ ~/projects/php/mims points to http://ims.local\n"
+    echo -e "  ${YELLOW}newsite mims${RESET}              ➔ ~/projects/php/mims points to http://mims.local"
+    echo -e "  ${YELLOW}newsite mims .${RESET}            ➔ Current directory points to http://mims.local"
+    echo -e "  ${YELLOW}newsite .${RESET}                 ➔ Current directory (e.g., /home/aaxyat/mims) points to http://mims.local\n"
 }
 
 list_sites() {
@@ -110,7 +112,7 @@ list_sites() {
     
     if [ "$found" -eq 0 ]; then
         echo -e "  ${YELLOW}No Virtual Host sites created yet.${RESET}"
-        echo -e "  Create one using: ${CYAN}newsite <folder> [domain]${RESET}"
+        echo -e "  Create one using: ${CYAN}newsite <sitename> [path]${RESET}"
     fi
     echo ""
 }
@@ -154,35 +156,42 @@ delete_site() {
 }
 
 create_site() {
-    local folder_arg="${1:-}"
-    local domain_arg="${2:-}"
-    
-    if [ -z "$folder_arg" ]; then
-        error "Please specify a project folder name. Example: newsite mims"
+    local arg1="${1:-}"
+    local arg2="${2:-}"
+
+    if [ -z "$arg1" ]; then
+        error "Please specify a site name or '.' for current directory."
         show_help
         exit 1
     fi
 
-    # Clean folder name (e.g., mims)
-    local folder_name
-    folder_name=$(echo "$folder_arg" | sed 's/\/$//; s/^\.\///' | tr -cd 'a-zA-Z0-9_-')
+    local domain_name=""
+    local project_dir=""
 
-    # If domain_arg is provided, use it; otherwise default domain_name = folder_name
-    local domain_name
-    if [ -n "$domain_arg" ]; then
-        domain_name=$(echo "$domain_arg" | sed 's/\.conf$//; s/\.local$//' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')
+    if [ "$arg1" == "." ]; then
+        # newsite . => get sitename from current directory name
+        project_dir="$(pwd)"
+        domain_name="$(basename "$project_dir" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')"
     else
-        domain_name=$(echo "$folder_name" | tr '[:upper:]' '[:lower:]')
+        domain_name="$(echo "$arg1" | sed 's/\.conf$//; s/\.local$//' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')"
+        if [ -n "$arg2" ]; then
+            if [ "$arg2" == "." ]; then
+                project_dir="$(pwd)"
+            else
+                project_dir="$(readlink -f "$arg2" 2>/dev/null || realpath "$arg2" 2>/dev/null || echo "$arg2")"
+            fi
+        else
+            project_dir="${PROJECTS_BASE}/${domain_name}"
+        fi
     fi
 
     local domain="${domain_name}.local"
-    local project_dir="${PROJECTS_BASE}/${folder_name}"
     local conf_file="/etc/apache2/sites-available/${domain_name}.conf"
 
     echo ""
     info "Configuring Virtual Host '${domain}' ➔ DocumentRoot '${project_dir}'..."
 
-    # 1. Ensure project directory exists at ~/projects/php/<folder_name>
+    # 1. Ensure project directory exists
     if [ ! -d "${project_dir}" ]; then
         info "Creating project directory at ${project_dir}..."
         $SUDO mkdir -p "${project_dir}"
