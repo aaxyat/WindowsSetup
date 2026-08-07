@@ -79,7 +79,8 @@ cleanup() {
     # Terminate background jobs
     jobs -p | xargs -r kill 2>/dev/null || true
     # Clean temporary files
-    rm -f /tmp/sshd_config_new /tmp/fastfetch.deb /tmp/lsd.deb 2>/dev/null || true
+    rm -f /tmp/sshd_config_new /tmp/fastfetch.deb /tmp/lsd.deb /tmp/omf_installer 2>/dev/null || true
+    rm -rf /tmp/omf_repo 2>/dev/null || true
     if [ $exit_code -ne 0 ]; then
         echo "" >&2
         echo -e "${MAGENTA}╭──────────────────────────────────────────────────────────────────────────╮${RESET}" >&2
@@ -608,17 +609,28 @@ if ! (
     fi
 
     if command -v fish &>/dev/null; then
-        info "Installing Oh-My-Fish, 'bira' theme & 'z' plugin for '${NEW_USER}'..."
-        if [ "$EUID" -eq 0 ]; then
-            run_boxed "su - \"${NEW_USER}\" -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
-            run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install bira'\"" || true
-            run_boxed "su - \"${NEW_USER}\" -c \"fish -c 'omf install z'\"" || true
-        else
-            run_boxed "sudo -u \"${NEW_USER}\" -H bash -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
-            run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install bira\"" || true
-            run_boxed "sudo -u \"${NEW_USER}\" -H fish -c \"omf install z\"" || true
+        info "Installing Oh-My-Fish non-interactively for '${NEW_USER}'..."
+        
+        # Download OMF installer script
+        curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install -o /tmp/omf_installer 2>/dev/null || true
+        
+        if [ -f /tmp/omf_installer ]; then
+            $SUDO chmod +x /tmp/omf_installer
+            if [ "$EUID" -eq 0 ]; then
+                run_boxed "su - \"${NEW_USER}\" -c \"fish /tmp/omf_installer --noninteractive --yes\"" || true
+            else
+                run_boxed "sudo -u \"${NEW_USER}\" -H fish /tmp/omf_installer --noninteractive --yes" || true
+            fi
+            rm -f /tmp/omf_installer
         fi
-        success "Oh-My-Fish, bira theme & z plugin configured."
+
+        # Pre-configure OMF theme to 'bira' and enable 'z' plugin natively
+        OMF_CONF_DIR="${USER_HOME}/.config/omf"
+        $SUDO mkdir -p "${OMF_CONF_DIR}"
+        echo "bira" | $SUDO tee "${OMF_CONF_DIR}/theme" >/dev/null
+        echo "z" | $SUDO tee "${OMF_CONF_DIR}/bundle" >/dev/null
+        $SUDO chown -R "${NEW_USER}:${NEW_USER}" "${OMF_CONF_DIR}" "${USER_HOME}/.local/share/omf" 2>/dev/null || true
+        success "Oh-My-Fish, bira theme & z plugin automated."
     fi
 
     FISH_CONF_DIR="${USER_HOME}/.config/fish"

@@ -24,6 +24,79 @@ item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
 
 export -f info success warn error item 2>/dev/null || true
 
+# Determine target WSL username (prefers current user or fallback to aaxyat)
+CURRENT_USER="${SUDO_USER:-${USER:-aaxyat}}"
+if [ "${CURRENT_USER}" == "root" ]; then
+    CURRENT_USER="aaxyat"
+fi
+USER_HOME="/home/${CURRENT_USER}"
+if [ "${CURRENT_USER}" == "root" ]; then
+    USER_HOME="/root"
+fi
+
+# -------------------------------------------------------------------
+# Automated Self-Test Suite (--test / test)
+# -------------------------------------------------------------------
+run_self_tests() {
+    echo -e "${CYAN}🧪 Running Automated WSL Environment Test Suite...${RESET}\n"
+    local passed=0
+    local failed=0
+    
+    test_check() {
+        local name=$1
+        local cmd=$2
+        if eval "$cmd" >/dev/null 2>&1; then
+            echo -e "  ${GREEN}✔ [PASS]${RESET} ${WHITE}${name}${RESET}"
+            passed=$((passed + 1))
+        else
+            echo -e "  ${MAGENTA}✖ [FAIL]${RESET} ${WHITE}${name}${RESET}"
+            failed=$((failed + 1))
+        fi
+    }
+
+    test_check "User '${CURRENT_USER}' active" "id '${CURRENT_USER}'"
+    test_check "Sudo group membership for '${CURRENT_USER}'" "id -nG '${CURRENT_USER}' | grep -qw sudo"
+    test_check "Passwordless sudo configured" "$SUDO grep -q '${CURRENT_USER}' /etc/sudoers.d/* 2>/dev/null"
+    test_check "Timezone set to Asia/Kathmandu" "timedatectl 2>/dev/null | grep -q 'Asia/Kathmandu' || grep -q 'Asia/Kathmandu' /etc/timezone 2>/dev/null"
+    test_check "/etc/wsl.conf systemd & automount" "grep -q 'systemd=true' /etc/wsl.conf 2>/dev/null"
+    test_check "Fish shell installed" "command -v fish"
+    test_check "Git installed" "command -v git"
+    test_check "Python3 installed" "command -v python3"
+    test_check "Nala package manager" "command -v nala"
+    test_check "apt-fast package manager" "command -v apt-fast"
+    test_check "lsd utility" "command -v lsd"
+    test_check "fastfetch utility" "command -v fastfetch"
+    test_check "btop system monitor" "command -v btop"
+    test_check "micro text editor" "command -v micro"
+    test_check "tmux terminal multiplexer" "command -v tmux"
+    test_check "NVM (Node Version Manager)" "[ -s '${USER_HOME}/.nvm/nvm.sh' ] || command -v nvm"
+    test_check "Astral 'uv' Python tool" "[ -f '${USER_HOME}/.cargo/bin/uv' ] || [ -f '${USER_HOME}/.local/bin/uv' ] || command -v uv"
+    test_check "Oh-My-Fish installed" "[ -d '${USER_HOME}/.local/share/omf' ]"
+    test_check "bira theme active" "grep -q 'bira' '${USER_HOME}/.config/omf/theme' 2>/dev/null"
+    test_check "z plugin active" "grep -q 'z' '${USER_HOME}/.config/omf/bundle' 2>/dev/null"
+    test_check "Docker Desktop CLI / Socket access" "docker ps"
+
+    echo ""
+    echo -e "${BLUE}╭──────────────────────────────────────────────────────────────────────────╮${RESET}"
+    echo -e "${BLUE}│${RESET} ${BOLD}${WHITE}TEST SUMMARY: ${GREEN}${passed} Passed${RESET}${WHITE}, ${MAGENTA}${failed} Failed${RESET}                             ${BLUE}│${RESET}"
+    echo -e "${BLUE}╰──────────────────────────────────────────────────────────────────────────╯${RESET}"
+    echo ""
+    if [ "$failed" -gt 0 ]; then
+        exit 1
+    else
+        exit 0
+    fi
+}
+
+if [ "${1:-}" == "--test" ] || [ "${1:-}" == "test" ]; then
+    if [ "$EUID" -ne 0 ]; then
+        SUDO="sudo"
+    else
+        SUDO=""
+    fi
+    run_self_tests
+fi
+
 # Nala-style bounded scrolling box renderer (fixed 5-line window with clean line erase)
 run_boxed() {
     local cmd="$*"
@@ -76,7 +149,8 @@ cleanup() {
     local exit_code=$?
     unset USER_PASS USER_PASS_CONFIRM 2>/dev/null || true
     jobs -p | xargs -r kill 2>/dev/null || true
-    rm -f /tmp/fastfetch.deb /tmp/lsd.deb 2>/dev/null || true
+    rm -f /tmp/fastfetch.deb /tmp/lsd.deb /tmp/omf_installer 2>/dev/null || true
+    rm -rf /tmp/omf_repo 2>/dev/null || true
     if [ $exit_code -ne 0 ]; then
         echo "" >&2
         echo -e "${MAGENTA}╭──────────────────────────────────────────────────────────────────────────╮${RESET}" >&2
@@ -98,7 +172,6 @@ error_handler() {
 }
 trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
 
-# Non-interactive frontend for apt package installations
 export DEBIAN_FRONTEND=noninteractive
 
 # Determine sudo requirement
@@ -172,16 +245,6 @@ cat << "EOF"
 EOF
 echo -e "${CYAN}             ⚡ Automated Ubuntu WSL Setup Engine ⚡${RESET}\n"
 
-# Determine target WSL username (prefers current user or fallback to aaxyat)
-CURRENT_USER="${SUDO_USER:-${USER:-aaxyat}}"
-if [ "${CURRENT_USER}" == "root" ]; then
-    CURRENT_USER="aaxyat"
-fi
-USER_HOME="/home/${CURRENT_USER}"
-if [ "${CURRENT_USER}" == "root" ]; then
-    USER_HOME="/root"
-fi
-
 # -------------------------------------------------------------------
 # 1. User & Sudo Verification
 # -------------------------------------------------------------------
@@ -196,16 +259,12 @@ fi
 
 $SUDO usermod -aG sudo "${CURRENT_USER}" 2>/dev/null || true
 
-info "Enabling pwfeedback (asterisks) in sudoers..."
+info "Configuring passwordless sudo for developer user '${CURRENT_USER}'..."
 if [ -d /etc/sudoers.d ]; then
-    echo "Defaults pwfeedback" | $SUDO tee /etc/sudoers.d/pwfeedback >/dev/null
-    $SUDO chmod 0440 /etc/sudoers.d/pwfeedback
-else
-    if ! $SUDO grep -q "pwfeedback" /etc/sudoers; then
-        echo "Defaults pwfeedback" | $SUDO tee -a /etc/sudoers >/dev/null
-    fi
+    echo "${CURRENT_USER} ALL=(ALL) NOPASSWD: ALL" | $SUDO tee "/etc/sudoers.d/${CURRENT_USER}" >/dev/null
+    $SUDO chmod 0440 "/etc/sudoers.d/${CURRENT_USER}"
 fi
-success "pwfeedback enabled in sudoers."
+success "Passwordless sudo configured for '${CURRENT_USER}'."
 
 # Auto-symlink Windows SSH Keys if available
 WIN_SSH_DIR="/mnt/c/Users/${CURRENT_USER}/.ssh"
@@ -324,12 +383,17 @@ fi
 success "Astral 'uv' installed."
 
 # -------------------------------------------------------------------
-# 4. Docker Desktop Integration Verification
+# 4. Docker Desktop Integration Verification & Permissions
 # -------------------------------------------------------------------
-show_progress 4 "Verifying Docker Desktop Windows integration"
+show_progress 4 "Verifying Docker Desktop Windows integration & permissions"
 
 $SUDO groupadd -f docker 2>/dev/null || true
 $SUDO usermod -aG docker "${CURRENT_USER}" 2>/dev/null || true
+
+if [ -e /var/run/docker.sock ]; then
+    $SUDO chgrp docker /var/run/docker.sock 2>/dev/null || true
+    $SUDO chmod 660 /var/run/docker.sock 2>/dev/null || true
+fi
 
 if command -v docker &>/dev/null; then
     success "Docker CLI detected (provided via Docker Desktop WSL integration)."
@@ -340,9 +404,9 @@ else
 fi
 
 # -------------------------------------------------------------------
-# 5. Shell Customization & Sane Aliases (Fish, OMF, bira, z & Tmux)
+# 5. Automated Oh-My-Fish & bira Theme Setup
 # -------------------------------------------------------------------
-show_progress 5 "Fish shell, Oh-My-Fish, themes, aliases & Tmux session"
+show_progress 5 "Automating Oh-My-Fish, bira theme & Fish shell customization"
 
 if ! (
     BASHRC_FILE="${USER_HOME}/.bashrc"
@@ -355,17 +419,28 @@ if ! (
     fi
 
     if command -v fish &>/dev/null; then
-        info "Installing Oh-My-Fish, 'bira' theme & 'z' plugin for '${CURRENT_USER}'..."
-        if [ "$EUID" -eq 0 ]; then
-            run_boxed "su - \"${CURRENT_USER}\" -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
-            run_boxed "su - \"${CURRENT_USER}\" -c \"fish -c 'omf install bira'\"" || true
-            run_boxed "su - \"${CURRENT_USER}\" -c \"fish -c 'omf install z'\"" || true
-        else
-            run_boxed "sudo -u \"${CURRENT_USER}\" -H bash -c \"curl -sSL --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish --noninteractive\"" || true
-            run_boxed "sudo -u \"${CURRENT_USER}\" -H fish -c \"omf install bira\"" || true
-            run_boxed "sudo -u \"${CURRENT_USER}\" -H fish -c \"omf install z\"" || true
+        info "Installing Oh-My-Fish non-interactively for '${CURRENT_USER}'..."
+        
+        # Download OMF installer script
+        curl -sSLf --connect-timeout 15 --retry 3 https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install -o /tmp/omf_installer 2>/dev/null || true
+        
+        if [ -f /tmp/omf_installer ]; then
+            $SUDO chmod +x /tmp/omf_installer
+            if [ "$EUID" -eq 0 ]; then
+                run_boxed "su - \"${CURRENT_USER}\" -c \"fish /tmp/omf_installer --noninteractive --yes\"" || true
+            else
+                run_boxed "sudo -u \"${CURRENT_USER}\" -H fish /tmp/omf_installer --noninteractive --yes" || true
+            fi
+            rm -f /tmp/omf_installer
         fi
-        success "Oh-My-Fish, bira theme & z plugin configured."
+
+        # Pre-configure OMF theme to 'bira' and enable 'z' plugin natively
+        OMF_CONF_DIR="${USER_HOME}/.config/omf"
+        $SUDO mkdir -p "${OMF_CONF_DIR}"
+        echo "bira" | $SUDO tee "${OMF_CONF_DIR}/theme" >/dev/null
+        echo "z" | $SUDO tee "${OMF_CONF_DIR}/bundle" >/dev/null
+        $SUDO chown -R "${CURRENT_USER}:${CURRENT_USER}" "${OMF_CONF_DIR}" "${USER_HOME}/.local/share/omf" 2>/dev/null || true
+        success "Oh-My-Fish, bira theme & z plugin automated."
     fi
 
     FISH_CONF_DIR="${USER_HOME}/.config/fish"

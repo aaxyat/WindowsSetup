@@ -1,0 +1,302 @@
+#!/usr/bin/env bash
+
+# Exit on error, undefined vars, and pipe failures
+set -euo pipefail
+
+# -------------------------------------------------------------------
+# ANSI Styling & Color Tokens
+# -------------------------------------------------------------------
+BOLD='\033[1m'
+DIM='\033[2m'
+BLUE='\033[38;5;39m'
+CYAN='\033[38;5;51m'
+GREEN='\033[38;5;82m'
+MAGENTA='\033[38;5;198m'
+YELLOW='\033[38;5;226m'
+WHITE='\033[38;5;255m'
+RESET='\033[0m'
+
+info()    { echo -e "  ${CYAN}ℹ${RESET}  $*"; }
+success() { echo -e "  ${GREEN}✔${RESET}  $*"; }
+warn()    { echo -e "  ${YELLOW}⚠${RESET}  $*"; }
+error()   { echo -e "  ${MAGENTA}✖${RESET}  $*"; }
+item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
+
+# Determine sudo requirement
+if [ "$EUID" -ne 0 ]; then
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+CURRENT_USER="${SUDO_USER:-${USER:-aaxyat}}"
+if [ "${CURRENT_USER}" == "root" ]; then
+    CURRENT_USER="aaxyat"
+fi
+USER_HOME="/home/${CURRENT_USER}"
+if [ "${CURRENT_USER}" == "root" ]; then
+    USER_HOME="/root"
+fi
+
+PROJECTS_BASE="${USER_HOME}/projects/php"
+WIN_HOSTS="/mnt/c/Windows/System32/drivers/etc/hosts"
+
+update_windows_hosts() {
+    local domain="$1"
+    if [ -f "$WIN_HOSTS" ]; then
+        if [ -w "$WIN_HOSTS" ]; then
+            if ! grep -q -w "${domain}" "$WIN_HOSTS" 2>/dev/null; then
+                echo -e "\n127.0.0.1  ${domain}" >> "$WIN_HOSTS"
+                success "Added '127.0.0.1  ${domain}' to Windows hosts file."
+            fi
+        else
+            warn "Windows hosts file requires write permissions for automatic updates."
+            echo -e "  ${WHITE}Run this ONE-TIME command in Windows PowerShell (as Admin):${RESET}"
+            echo -e "  ${YELLOW}icacls C:\\Windows\\System32\\drivers\\etc\\hosts /grant Users:(M)${RESET}\n"
+        fi
+    fi
+}
+
+remove_windows_hosts() {
+    local domain="$1"
+    if [ -f "$WIN_HOSTS" ] && [ -w "$WIN_HOSTS" ]; then
+        sed -i "/\b${domain}\b/d" "$WIN_HOSTS" 2>/dev/null || true
+        success "Removed '${domain}' from Windows hosts file."
+    fi
+}
+
+show_help() {
+    echo -e "${MAGENTA}${BOLD}🌐 WSL PHP Virtual Host Manager (newsite)${RESET}\n"
+    echo -e "${WHITE}Usage:${RESET}"
+    echo -e "  ${CYAN}newsite <folder> [domain]${RESET}    Create a Virtual Host in ~/projects/php/<folder>"
+    echo -e "  ${CYAN}newsite --list \| list${RESET}       List all configured Virtual Host sites"
+    echo -e "  ${CYAN}newsite --delete <name>${RESET}     Delete a Virtual Host site (e.g., newsite --delete mims)"
+    echo -e "  ${CYAN}newsite --help \| help${RESET}       Show this help message\n"
+    echo -e "${WHITE}Examples:${RESET}"
+    echo -e "  ${YELLOW}newsite mims${RESET}        ➔ ~/projects/php/mims points to http://mims.local"
+    echo -e "  ${YELLOW}newsite mims ims${RESET}    ➔ ~/projects/php/mims points to http://ims.local\n"
+}
+
+list_sites() {
+    echo -e "${CYAN}📋 Configured Apache Virtual Host Sites:${RESET}\n"
+    printf "  ${BOLD}%-20s %-12s %-35s %-30s${RESET}\n" "SITE NAME" "STATUS" "DOMAIN URL" "DOCUMENT ROOT"
+    echo "  ------------------------------------------------------------------------------------------------──"
+    
+    local found=0
+    for conf in /etc/apache2/sites-available/*.conf; do
+        [ -e "$conf" ] || continue
+        local filename
+        filename=$(basename "$conf")
+        
+        # Exclude default files
+        if [[ "$filename" == "000-default.conf" || "$filename" == "default-ssl.conf" || "$filename" == "001-dynamic-vhosts.conf" || "$filename" == "zz-dynamic-vhosts.conf" ]]; then
+            continue
+        fi
+        
+        local sitename="${filename%.conf}"
+        local domain="${sitename}.local"
+        local docroot
+        docroot=$(grep -i "DocumentRoot" "$conf" 2>/dev/null | awk '{print $2}' | tr -d '"' | tr -d "'" | head -n 1 || echo "Unknown")
+        local status_str="${MAGENTA}Disabled${RESET}"
+        
+        if [ -e "/etc/apache2/sites-enabled/${filename}" ]; then
+            status_str="${GREEN}Enabled${RESET}"
+        fi
+        
+        printf "  %-20s %-22b %-35s %-30s\n" "${sitename}" "${status_str}" "http://${domain}" "${docroot}"
+        found=$((found + 1))
+    done
+    
+    if [ "$found" -eq 0 ]; then
+        echo -e "  ${YELLOW}No Virtual Host sites created yet.${RESET}"
+        echo -e "  Create one using: ${CYAN}newsite <folder> [domain]${RESET}"
+    fi
+    echo ""
+}
+
+delete_site() {
+    local name=$1
+    if [ -z "$name" ]; then
+        error "Please specify a site name to delete. Example: newsite --delete mims"
+        exit 1
+    fi
+    
+    local sitename
+    sitename=$(echo "$name" | sed 's/\.conf$//; s/\.local$//')
+    local conf_file="/etc/apache2/sites-available/${sitename}.conf"
+    local domain="${sitename}.local"
+
+    if [ ! -f "$conf_file" ]; then
+        error "Site configuration '${conf_file}' not found."
+        exit 1
+    fi
+    
+    local docroot
+    docroot=$(grep -i "DocumentRoot" "$conf_file" 2>/dev/null | awk '{print $2}' | tr -d '"' | tr -d "'" | head -n 1 || echo "")
+
+    info "Disabling Apache site '${sitename}'..."
+    $SUDO a2dissite "${sitename}.conf" 2>/dev/null || true
+    
+    info "Removing Apache config file '${conf_file}'..."
+    $SUDO rm -f "$conf_file"
+    
+    info "Reloading Apache2 web server..."
+    $SUDO systemctl reload apache2 2>/dev/null || $SUDO service apache2 reload 2>/dev/null || true
+
+    info "Removing '${domain}' entry from Windows hosts file..."
+    remove_windows_hosts "${domain}"
+
+    success "Virtual Host site '${domain}' disabled and removed."
+    if [ -n "$docroot" ]; then
+        echo -e "  ${YELLOW}Note:${RESET} Project folder '${docroot}' has been preserved."
+    fi
+}
+
+create_site() {
+    local folder_arg="${1:-}"
+    local domain_arg="${2:-}"
+    
+    if [ -z "$folder_arg" ]; then
+        error "Please specify a project folder name. Example: newsite mims"
+        show_help
+        exit 1
+    fi
+
+    # Clean folder name (e.g., mims)
+    local folder_name
+    folder_name=$(echo "$folder_arg" | sed 's/\/$//; s/^\.\///' | tr -cd 'a-zA-Z0-9_-')
+
+    # If domain_arg is provided, use it; otherwise default domain_name = folder_name
+    local domain_name
+    if [ -n "$domain_arg" ]; then
+        domain_name=$(echo "$domain_arg" | sed 's/\.conf$//; s/\.local$//' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')
+    else
+        domain_name=$(echo "$folder_name" | tr '[:upper:]' '[:lower:]')
+    fi
+
+    local domain="${domain_name}.local"
+    local project_dir="${PROJECTS_BASE}/${folder_name}"
+    local conf_file="/etc/apache2/sites-available/${domain_name}.conf"
+
+    echo ""
+    info "Configuring Virtual Host '${domain}' ➔ DocumentRoot '${project_dir}'..."
+
+    # 1. Ensure project directory exists at ~/projects/php/<folder_name>
+    if [ ! -d "${project_dir}" ]; then
+        info "Creating project directory at ${project_dir}..."
+        $SUDO mkdir -p "${project_dir}"
+        $SUDO chown -R "${CURRENT_USER}:www-data" "${USER_HOME}/projects" 2>/dev/null || true
+        $SUDO chmod -R 775 "${USER_HOME}/projects" 2>/dev/null || true
+        success "Directory created: ${project_dir}"
+    else
+        $SUDO chmod -R 775 "${project_dir}" 2>/dev/null || true
+    fi
+
+    # 2. Create starter index.php if missing
+    local index_file="${project_dir}/index.php"
+    local index_html="${project_dir}/index.html"
+    if [ ! -f "${index_file}" ] && [ ! -f "${index_html}" ]; then
+        $SUDO tee "${index_file}" >/dev/null << EOF
+<!DOCTYPE html>
+<html>
+<head>
+    <title>${domain}</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 50px; text-align: center; }
+        h1 { color: #38bdf8; }
+        code { background: #1e293b; padding: 4px 8px; border-radius: 4px; color: #4ade80; }
+    </style>
+</head>
+<body>
+    <h1>⚡ Welcome to ${domain}!</h1>
+    <p>Project Folder: <code>${project_dir}</code></p>
+    <p>PHP Version: <code><?php echo phpversion(); ?></code></p>
+</body>
+</html>
+EOF
+        $SUDO chown "${CURRENT_USER}:www-data" "${index_file}" 2>/dev/null || true
+        $SUDO chmod 664 "${index_file}" 2>/dev/null || true
+        success "Created starter index.php in ${project_dir}"
+    fi
+
+    # 3. Create Apache VirtualHost Configuration
+    info "Generating Apache Virtual Host configuration..."
+    $SUDO tee "${conf_file}" >/dev/null << EOF
+<VirtualHost *:80>
+    ServerName ${domain}
+    ServerAlias www.${domain}
+    DocumentRoot ${project_dir}
+
+    <Directory ${project_dir}>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/${domain_name}_error.log
+    CustomLog \${APACHE_LOG_DIR}/${domain_name}_access.log combined
+</VirtualHost>
+EOF
+    success "Created configuration file: ${conf_file}"
+
+    # 4. Enable site & reload Apache
+    info "Enabling site in Apache & reloading web server..."
+    $SUDO a2ensite "${domain_name}.conf" >/dev/null 2>&1
+    $SUDO systemctl reload apache2 >/dev/null 2>&1 || $SUDO service apache2 reload >/dev/null 2>&1 || true
+    success "Apache site '${domain_name}.conf' enabled."
+
+    # 5. Automatically Update Windows Hosts File
+    info "Updating Windows hosts file (C:\\Windows\\System32\\drivers\\etc\\hosts)..."
+    update_windows_hosts "${domain}"
+
+    # 6. Completion Summary
+    echo ""
+    echo -e "${GREEN}╭──────────────────────────────────────────────────────────────────────────╮${RESET}"
+    echo -e "${GREEN}│${RESET} ${BOLD}${WHITE}  🎉  VIRTUAL HOST '${domain}' ACTIVE!  🎉                              ${RESET}${GREEN}│${RESET}"
+    echo -e "${GREEN}├──────────────────────────────────────────────────────────────────────────┤${RESET}"
+    echo -e "${GREEN}│${RESET}  ${CYAN}• Domain URL${RESET}      : ${BOLD}${YELLOW}http://${domain}${RESET}                            ${GREEN}│${RESET}"
+    echo -e "${GREEN}│${RESET}  ${CYAN}• DocumentRoot${RESET}    : ${BOLD}${WHITE}${project_dir}${RESET}"
+    echo -e "${GREEN}│${RESET}  ${CYAN}• Apache Config${RESET}   : ${BOLD}${WHITE}${conf_file}${RESET}"
+    echo -e "${GREEN}╰──────────────────────────────────────────────────────────────────────────╯${RESET}"
+    echo ""
+}
+
+# Install Fish shell auto-completions
+install_fish_completions() {
+    local fish_comp_dir="${USER_HOME}/.config/fish/completions"
+    if command -v fish &>/dev/null; then
+        mkdir -p "${fish_comp_dir}" 2>/dev/null || true
+        cat << 'EOF_COMP' > "${fish_comp_dir}/newsite.fish" 2>/dev/null || true
+# Fish autocompletion definitions for newsite CLI manager
+complete -c newsite -f
+complete -c newsite -n "__fish_use_subcommand" -a "--list" -d "List all configured Virtual Host sites"
+complete -c newsite -n "__fish_use_subcommand" -a "list" -d "List all configured Virtual Host sites"
+complete -c newsite -n "__fish_use_subcommand" -a "--delete" -d "Delete a Virtual Host site"
+complete -c newsite -n "__fish_use_subcommand" -a "delete" -d "Delete a Virtual Host site"
+complete -c newsite -n "__fish_use_subcommand" -a "--help" -d "Show newsite help"
+EOF_COMP
+    fi
+}
+install_fish_completions
+
+# Main Command Router
+if [ "$#" -eq 0 ]; then
+    show_help
+    exit 0
+fi
+
+case "$1" in
+    --help|-h|help)
+        show_help
+        ;;
+    --list|-l|list)
+        list_sites
+        ;;
+    --delete|-d|delete)
+        shift
+        delete_site "${1:-}"
+        ;;
+    *)
+        create_site "$1" "${2:-}"
+        ;;
+esac

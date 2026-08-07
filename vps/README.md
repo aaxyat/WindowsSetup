@@ -4,18 +4,29 @@ Automated shell scripts for initializing and managing Oracle Cloud VPS instances
 
 ## 🚀 Quick Start Guide
 
-### 1. Ubuntu WSL One-Command Setup (Local Windows PC)
+### 1. Ubuntu WSL Environment Setup (Local Windows PC)
 To configure your local Ubuntu WSL environment in a single command:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/wslsetup.sh | sudo bash
-# OR run locally inside WSL:
-bash wslsetup.sh
+# Run automated self-test suite:
+bash wslsetup.sh --test
 ```
 
 ---
 
-### 2. VPS Full Initial Setup (Oracle Cloud / Debian)
+### 2. Ubuntu WSL PHP Dev Environment Setup (XAMPP-like)
+To install Apache2 + PHP + MariaDB + phpMyAdmin with `/home/aaxyat/projects/php` DocumentRoot, `newsite` CLI manager, and wildcard `*.local` Virtual Hosts:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/wsldev.sh | sudo bash
+# OR run locally inside WSL:
+bash wsldev.sh
+```
+
+---
+
+### 3. VPS Full Initial Setup (Oracle Cloud / Debian)
 Once your VPS reboots, SSH in as `root` and run `setup.sh`:
 
 ```bash
@@ -26,7 +37,7 @@ bash setup.sh
 
 ---
 
-### 3. Reset / Re-install VPS OS
+### 4. Reset / Re-install VPS OS
 To reset your Oracle VPS back to a clean Debian 13 OS using `debi.sh`:
 
 ```bash
@@ -37,60 +48,75 @@ bash reset.sh
 
 ---
 
+## 🌐 Virtual Host Management with `newsite` CLI
+
+The `wsldev.sh` engine installs the **`newsite`** CLI manager into `/usr/local/bin/newsite`:
+
+```bash
+# 1. Create a new site (Creates ~/projects/php/mims, /etc/apache2/sites-available/mims.conf, enables site & updates Windows hosts file)
+newsite mims
+
+# 2. Create a new site with a custom domain (e.g. ~/projects/php/mims points to http://ims.local):
+newsite mims ims
+
+# 3. List all configured Virtual Host sites:
+newsite --list
+
+# 4. Delete a Virtual Host site (Disables site, removes Apache config & cleans Windows hosts file):
+newsite --delete mims
+```
+
+---
+
+## 💻 Windows PowerShell Domain Mapper (`wslmap`)
+
+Shortcut function included in your PowerShell profile (`Microsoft.PowerShell_profile.ps1`):
+
+- **`wslmap`** (or **`mapwsl`**): Grants modify permissions on `C:\Windows\System32\drivers\etc\hosts` (using `gsudo` / UAC elevation).
+- Usage in PowerShell:
+  ```powershell
+  wslmap
+  ```
+
+---
+
+## 🛠️ What `wsldev.sh` Configures (XAMPP-like PHP Stack)
+
+1. **Workspace DocumentRoot (`/home/aaxyat/projects/php`)**:
+   - Equivalent of XAMPP `htdocs`. Owned by `aaxyat:www-data` (`775` mode).
+   - Serves `http://localhost/projectname` ➔ `/home/aaxyat/projects/php/projectname`.
+   - Generates a modern dark-mode PHP project dashboard (`index.php`).
+
+2. **Apache2 & Full PHP Suite**:
+   - Apache2 with `mod_rewrite`, `mod_vhost_alias`, `mod_headers`, `mod_env`.
+   - PHP extensions: `cli`, `mysql`, `curl`, `gd`, `mbstring`, `xml`, `zip`, `intl`, `bcmath`, `soap`, `sqlite3`.
+
+3. **MariaDB/MySQL Database Server**:
+   - MySQL service enabled via `systemd`.
+   - Pre-configured root and developer account `aaxyat` with full privileges (Password: `root`).
+
+4. **phpMyAdmin Integration**:
+   - Web interface pre-configured at `http://localhost/phpmyadmin`.
+
+5. **`newsite` CLI Tool & Wildcard Virtual Hosts (`*.local`)**:
+   - CLI tool for site creation/deletion, and automatic wildcard mapping for any subfolder in `/home/aaxyat/projects/php/<folder>` ➔ `http://<folder>.local`.
+
+---
+
 ## 🛠️ What `wslsetup.sh` Configures (Optimized for WSL)
 
 1. **User & Sudo Verification**:
-   - Detects active WSL user (`aaxyat`).
-   - Enables `pwfeedback` (asterisks `*` when typing sudo passwords).
-
+   - Detects active WSL user (`aaxyat`). Enables `pwfeedback` (asterisks `*` when typing sudo passwords).
 2. **Package & System Acceleration**:
    - Sets timezone to `Asia/Kathmandu`.
    - **Nala ➔ apt-fast ➔ apt-get** package manager priority chain.
    - Installs `nala`, `apt-fast`, `git`, `python3`, `curl`, `wget`.
-
-3. **Docker Engine & Portainer CE**:
-   - Installs official Docker Engine + Docker Compose.
-   - WSL service compatibility (works seamlessly with systemd or SysV init).
-   - Deploys Portainer CE container (`http://localhost:9000`).
-
-4. **Developer Environment & Shell Customization**:
-   - Default shell: **Fish** + **Oh-My-Fish** (`bira` theme + `z` plugin).
+3. **Developer Tools & Version Managers**:
+   - **NVM** (Node Version Manager) & **Astral `uv`** (Fast Python package manager).
+4. **Docker Desktop Windows Integration**:
+   - Configures socket group permissions (`root:docker`, `660` mode) and adds user to `docker` group.
+5. **Developer Environment & Shell Customization**:
+   - Default shell: **Fish** + **Oh-My-Fish** (`bira` theme + `z` plugin automated).
    - **Tmux**: Auto-attaches to persistent session `main`.
    - Developer CLI suite: `nala`, `btop`, `micro`, `lsd`, `fastfetch`.
-   - Fish Aliases (`ls=lsd`, `neofetch=fastfetch`, `ports`, `update`, `dps`, `cls`).
-
-5. **Nala-Style Bounded UI**:
-   - Live command output streaming inside fixed 5-line scrolling ASCII border boxes.
-
----
-
-## 🖥️ What `setup.sh` Configures (Oracle VPS Production)
-
-1. **User Management**:
-   - Creates user `aaxyat` with sudo privileges and password prompt.
-2. **Swap & Memory Tuning**:
-   - 8GB Swap file allocation + swappiness tuning (`vm.swappiness=10`).
-3. **SSH Hardening & UFW Firewall**:
-   - Key-only SSH auth (`PermitRootLogin no`, `PasswordAuthentication no`).
-   - Opens ports `22`, `80`, `443`, `9000`.
-4. **Dynamic OCI Keep-Alive Daemon (`sys-healthd`)**:
-   - Dynamic load balancer maintaining ~21% CPU/RAM to prevent Oracle reclaim.
-5. **Docker, Portainer & Shell Customizations**:
-   - Fish + OMF `bira` + `z` + `tmux` + Portainer CE.
-
----
-
-## 🔒 Post-Setup Access
-
-Log in as `aaxyat` via SSH:
-```bash
-ssh aaxyat@<YOUR_VPS_IP>
-```
-Access Portainer dashboard:
-```text
-# VPS:
-http://<YOUR_VPS_IP>:9000
-
-# WSL:
-http://localhost:9000
-```
+   - Fish Aliases (`explorer`, `clip`, `code`, `ls=lsd`, `neofetch=fastfetch`, `ports`, `update`, `dps`, `cls`).
