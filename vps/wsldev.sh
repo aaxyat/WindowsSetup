@@ -469,8 +469,8 @@ if [ -f "$NEWSITE_SRC" ]; then
     $SUDO chmod +x /usr/local/bin/newsite
     success "'newsite' CLI manager installed."
 else
-    # Fetch from repository if running via curl pipe
-    $SUDO curl -sSLf https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/newsite -o /usr/local/bin/newsite 2>/dev/null || true
+    # Fetch from main branch repository if running via curl pipe
+    $SUDO curl -sSLf https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/vps/newsite -o /usr/local/bin/newsite 2>/dev/null || true
     $SUDO chmod +x /usr/local/bin/newsite 2>/dev/null || true
     success "'newsite' CLI manager fetched and installed."
 fi

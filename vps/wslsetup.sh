@@ -24,79 +24,6 @@ item()    { echo -e "  ${BLUE}✚${RESET}  $*"; }
 
 export -f info success warn error item 2>/dev/null || true
 
-# Determine target WSL username (prefers current user or fallback to aaxyat)
-CURRENT_USER="${SUDO_USER:-${USER:-aaxyat}}"
-if [ "${CURRENT_USER}" == "root" ]; then
-    CURRENT_USER="aaxyat"
-fi
-USER_HOME="/home/${CURRENT_USER}"
-if [ "${CURRENT_USER}" == "root" ]; then
-    USER_HOME="/root"
-fi
-
-# -------------------------------------------------------------------
-# Automated Self-Test Suite (--test / test)
-# -------------------------------------------------------------------
-run_self_tests() {
-    echo -e "${CYAN}🧪 Running Automated WSL Environment Test Suite...${RESET}\n"
-    local passed=0
-    local failed=0
-    
-    test_check() {
-        local name=$1
-        local cmd=$2
-        if eval "$cmd" >/dev/null 2>&1; then
-            echo -e "  ${GREEN}✔ [PASS]${RESET} ${WHITE}${name}${RESET}"
-            passed=$((passed + 1))
-        else
-            echo -e "  ${MAGENTA}✖ [FAIL]${RESET} ${WHITE}${name}${RESET}"
-            failed=$((failed + 1))
-        fi
-    }
-
-    test_check "User '${CURRENT_USER}' active" "id '${CURRENT_USER}'"
-    test_check "Sudo group membership for '${CURRENT_USER}'" "id -nG '${CURRENT_USER}' | grep -qw sudo"
-    test_check "Passwordless sudo configured" "$SUDO grep -q '${CURRENT_USER}' /etc/sudoers.d/* 2>/dev/null"
-    test_check "Timezone set to Asia/Kathmandu" "timedatectl 2>/dev/null | grep -q 'Asia/Kathmandu' || grep -q 'Asia/Kathmandu' /etc/timezone 2>/dev/null"
-    test_check "/etc/wsl.conf systemd & automount" "grep -q 'systemd=true' /etc/wsl.conf 2>/dev/null"
-    test_check "Fish shell installed" "command -v fish"
-    test_check "Git installed" "command -v git"
-    test_check "Python3 installed" "command -v python3"
-    test_check "Nala package manager" "command -v nala"
-    test_check "apt-fast package manager" "command -v apt-fast"
-    test_check "lsd utility" "command -v lsd"
-    test_check "fastfetch utility" "command -v fastfetch"
-    test_check "btop system monitor" "command -v btop"
-    test_check "micro text editor" "command -v micro"
-    test_check "tmux terminal multiplexer" "command -v tmux"
-    test_check "NVM (Node Version Manager)" "[ -s '${USER_HOME}/.nvm/nvm.sh' ] || command -v nvm"
-    test_check "Astral 'uv' Python tool" "[ -f '${USER_HOME}/.cargo/bin/uv' ] || [ -f '${USER_HOME}/.local/bin/uv' ] || command -v uv"
-    test_check "Oh-My-Fish installed" "[ -d '${USER_HOME}/.local/share/omf' ]"
-    test_check "bira theme active" "grep -q 'bira' '${USER_HOME}/.config/omf/theme' 2>/dev/null"
-    test_check "z plugin active" "grep -q 'z' '${USER_HOME}/.config/omf/bundle' 2>/dev/null"
-    test_check "Docker Desktop CLI / Socket access" "docker ps"
-
-    echo ""
-    echo -e "${BLUE}╭──────────────────────────────────────────────────────────────────────────╮${RESET}"
-    echo -e "${BLUE}│${RESET} ${BOLD}${WHITE}TEST SUMMARY: ${GREEN}${passed} Passed${RESET}${WHITE}, ${MAGENTA}${failed} Failed${RESET}                             ${BLUE}│${RESET}"
-    echo -e "${BLUE}╰──────────────────────────────────────────────────────────────────────────╯${RESET}"
-    echo ""
-    if [ "$failed" -gt 0 ]; then
-        exit 1
-    else
-        exit 0
-    fi
-}
-
-if [ "${1:-}" == "--test" ] || [ "${1:-}" == "test" ]; then
-    if [ "$EUID" -ne 0 ]; then
-        SUDO="sudo"
-    else
-        SUDO=""
-    fi
-    run_self_tests
-fi
-
 # Nala-style bounded scrolling box renderer (fixed 5-line window with clean line erase)
 run_boxed() {
     local cmd="$*"
@@ -143,19 +70,15 @@ sys.exit(rc)
 }
 
 # -------------------------------------------------------------------
-# Error Handling & Cleanup Traps
+# Error Handling & Traps
 # -------------------------------------------------------------------
 cleanup() {
     local exit_code=$?
-    unset USER_PASS USER_PASS_CONFIRM 2>/dev/null || true
     jobs -p | xargs -r kill 2>/dev/null || true
-    rm -f /tmp/fastfetch.deb /tmp/lsd.deb /tmp/omf_installer 2>/dev/null || true
-    rm -rf /tmp/omf_repo 2>/dev/null || true
     if [ $exit_code -ne 0 ]; then
         echo "" >&2
         echo -e "${MAGENTA}╭──────────────────────────────────────────────────────────────────────────╮${RESET}" >&2
-        echo -e "${MAGENTA}│${RESET} ${BOLD}${MAGENTA}WSL Setup encountered an error and stopped.${RESET}                        ${MAGENTA}│${RESET}" >&2
-        echo -e "${MAGENTA}│${RESET} ${WHITE}Your system state has been safely preserved.${RESET}                          ${MAGENTA}│${RESET}" >&2
+        echo -e "${MAGENTA}│${RESET} ${BOLD}${MAGENTA}WSL Environment Setup encountered an error and stopped.${RESET}           ${MAGENTA}│${RESET}" >&2
         echo -e "${MAGENTA}╰──────────────────────────────────────────────────────────────────────────╯${RESET}" >&2
     fi
 }
@@ -173,6 +96,63 @@ error_handler() {
 trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
 
 export DEBIAN_FRONTEND=noninteractive
+
+# Self-Test Verification Suite
+run_self_tests() {
+    echo -e "${CYAN}🧪 Running Automated WSL Environment Verification Suite...${RESET}\n"
+    local passed=0
+    local failed=0
+    local SUDO=""
+    if [ "$EUID" -ne 0 ]; then SUDO="sudo"; fi
+
+    assert_cmd() {
+        local name=$1
+        local cmd=$2
+        if eval "$cmd" >/dev/null 2>&1; then
+            echo -e "  ${GREEN}✔ [PASS]${RESET} ${name}"
+            passed=$((passed + 1))
+        else
+            echo -e "  ${MAGENTA}✖ [FAIL]${RESET} ${name}"
+            failed=$((failed + 1))
+        fi
+    }
+
+    assert_cmd "Timezone is Asia/Kathmandu" "timedatectl 2>/dev/null | grep -q 'Asia/Kathmandu' || cat /etc/timezone | grep -q 'Asia/Kathmandu'"
+    assert_cmd "pwfeedback enabled in sudoers" "$SUDO grep -q 'pwfeedback' /etc/sudoers.d/pwfeedback /etc/sudoers 2>/dev/null"
+    assert_cmd "Passwordless sudo enabled for user" "$SUDO sudo -n true 2>/dev/null"
+    assert_cmd "Nala package manager installed" "command -v nala"
+    assert_cmd "apt-fast package manager installed" "command -v apt-fast"
+    assert_cmd "Git installed" "command -v git"
+    assert_cmd "Python3 installed" "command -v python3"
+    assert_cmd "Curl installed" "command -v curl"
+    assert_cmd "Wget installed" "command -v wget"
+    assert_cmd "NVM (Node Version Manager) installed" "[ -s \"\$HOME/.nvm/nvm.sh\" ] || command -v nvm"
+    assert_cmd "Astral 'uv' installed" "[ -f \"\$HOME/.local/bin/uv\" ] || command -v uv"
+    assert_cmd "Docker socket group permissions set" "[ -e /var/run/docker.sock ] && [ \$(stat -c '%g' /var/run/docker.sock 2>/dev/null || echo 0) -eq \$(getent group docker | cut -d: -f3 2>/dev/null || echo 1) ]"
+    assert_cmd "User added to docker group" "groups | grep -q 'docker'"
+    assert_cmd "Fish shell installed" "command -v fish"
+    assert_cmd "Oh-My-Fish installed" "[ -d \"\$HOME/.local/share/omf\" ]"
+    assert_cmd "OMF theme set to bira" "grep -q 'bira' \"\$HOME/.config/omf/theme\" 2>/dev/null"
+    assert_cmd "OMF plugin z enabled" "grep -q 'z' \"\$HOME/.config/omf/bundle\" 2>/dev/null"
+    assert_cmd "Tmux installed" "command -v tmux"
+    assert_cmd "lsd installed" "command -v lsd"
+    assert_cmd "fastfetch installed" "command -v fastfetch"
+    assert_cmd "Fish configuration present" "[ -f \"\$HOME/.config/fish/config.fish\" ]"
+
+    echo ""
+    echo -e "${BOLD}${WHITE}Verification Summary: ${GREEN}${passed} Passed${RESET}, ${MAGENTA}${failed} Failed${RESET}"
+    if [ "$failed" -eq 0 ]; then
+        echo -e "${GREEN}🎉 All 21 self-tests passed successfully!${RESET}\n"
+        exit 0
+    else
+        echo -e "${MAGENTA}⚠️ Some verification tests failed.${RESET}\n"
+        exit 1
+    fi
+}
+
+if [ "${1:-}" == "--test" ]; then
+    run_self_tests
+fi
 
 # Determine sudo requirement
 if [ "$EUID" -ne 0 ]; then
@@ -234,119 +214,86 @@ show_progress() {
 }
 
 clear
-echo -e "${MAGENTA}"
+echo -e "${CYAN}"
 cat << "EOF"
- ██╗██╗  ██╗███████╗██╗     ███████╗███████╗████████╗██╗   ██╗██████╗ 
- ██║██║  ██║██╔════╝██║     ██╔════╝██╔════╝╚══██╔══╝██║   ██║██╔══██╗
- ██║██║  ██║███████╗██║     ███████╗█████╗     ██║   ██║   ██║██████╔╝
- ██║██╔╗ ██║╚════██║██║     ╚════██║██╔══╝     ██║   ██║   ██║██╔═══╝ 
- ██║╚█████╔╝███████║███████╗███████║███████╗   ██║   ╚██████╔╝██║     
- ╚═╝ ╚════╝ ╚══════╝╚══════╝╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝     
+██╗███╗   ██╗███████╗████████╗██████╗  ██████╗ ███╗   ██╗██╗████████╗
+██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██╔═══██╗████╗  ██║██║╚══██╔══╝
+██║██╔██╗ ██║███████╗   ██║   ██████╔╝██║   ██║██╔██╗ ██║██║   ██║   
+██║██║╚██╗██║╚════██║   ██║   ██╔══██╗██║   ██║██║╚██╗██║██║   ██║   
+██║██║ ╚████║███████║   ██║   ██║  ██║╚██████╔╝██║ ╚████║██║   ██║   
+╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝   ╚═══╝   
 EOF
-echo -e "${CYAN}             ⚡ Automated Ubuntu WSL Setup Engine ⚡${RESET}\n"
+echo -e "${MAGENTA}          ⚡ Automated Ubuntu WSL Setup Engine (v2.0) ⚡${RESET}\n"
 
-# -------------------------------------------------------------------
-# 1. User & Sudo Verification
-# -------------------------------------------------------------------
-show_progress 1 "Configuring user '${CURRENT_USER}' & sudo permissions"
-
-if id "${CURRENT_USER}" &>/dev/null; then
-    info "User '${CURRENT_USER}' active."
-else
-    $SUDO useradd -m -s /bin/bash "${CURRENT_USER}"
-    success "User '${CURRENT_USER}' created."
+CURRENT_USER="${SUDO_USER:-${USER:-aaxyat}}"
+if [ "${CURRENT_USER}" == "root" ]; then
+    CURRENT_USER="aaxyat"
+fi
+USER_HOME="/home/${CURRENT_USER}"
+if [ "${CURRENT_USER}" == "root" ]; then
+    USER_HOME="/root"
 fi
 
-$SUDO usermod -aG sudo "${CURRENT_USER}" 2>/dev/null || true
-
-info "Configuring passwordless sudo for developer user '${CURRENT_USER}'..."
-if [ -d /etc/sudoers.d ]; then
-    echo "${CURRENT_USER} ALL=(ALL) NOPASSWD: ALL" | $SUDO tee "/etc/sudoers.d/${CURRENT_USER}" >/dev/null
-    $SUDO chmod 0440 "/etc/sudoers.d/${CURRENT_USER}"
-fi
-success "Passwordless sudo configured for '${CURRENT_USER}'."
-
-# Auto-symlink Windows SSH Keys if available
-WIN_SSH_DIR="/mnt/c/Users/${CURRENT_USER}/.ssh"
-LINUX_SSH_DIR="${USER_HOME}/.ssh"
-if [ -d "${WIN_SSH_DIR}" ]; then
-    info "Windows SSH keys detected at ${WIN_SSH_DIR}. Configuring symlink..."
-    $SUDO mkdir -p "${LINUX_SSH_DIR}"
-    $SUDO cp -rn "${WIN_SSH_DIR}"/* "${LINUX_SSH_DIR}/" 2>/dev/null || true
-    $SUDO chmod 700 "${LINUX_SSH_DIR}" 2>/dev/null || true
-    $SUDO chmod 600 "${LINUX_SSH_DIR}"/* 2>/dev/null || true
-    $SUDO chown -R "${CURRENT_USER}:${CURRENT_USER}" "${LINUX_SSH_DIR}" 2>/dev/null || true
-    success "Windows SSH keys integrated."
-fi
-
-# Configure /etc/wsl.conf for clean file permissions and systemd
-info "Configuring /etc/wsl.conf (systemd=true & automount metadata)..."
-$SUDO tee /etc/wsl.conf >/dev/null << 'EOF'
-[boot]
-systemd=true
-
-[automount]
-enabled = true
-options = "metadata,umask=22,fmask=11"
-
-[interop]
-enabled = true
-appendWindowsPath = true
-EOF
-success "/etc/wsl.conf optimized."
-
 # -------------------------------------------------------------------
-# 2. System Update, Timezone & Core Package Suite
+# 1. User & Sudo Privileges & Timezone (Asia/Kathmandu)
 # -------------------------------------------------------------------
-show_progress 2 "System updates, Asia/Kathmandu timezone & package suite"
+show_progress 1 "Configuring user privileges, passwordless sudo & timezone"
 
 info "Setting system timezone to Asia/Kathmandu..."
 $SUDO timedatectl set-timezone Asia/Kathmandu 2>/dev/null || {
-    $SUDO ln -sf /usr/share/zoneinfo/Asia/Kathmandu /etc/localtime
     echo "Asia/Kathmandu" | $SUDO tee /etc/timezone >/dev/null
+    $SUDO ln -sf /usr/share/zoneinfo/Asia/Kathmandu /etc/localtime
 }
 success "Timezone set to Asia/Kathmandu."
 
-info "Updating package lists..."
-run_boxed "$SUDO apt update -y" || true
-
-info "Upgrading system packages..."
-run_boxed "$SUDO apt upgrade -y" || true
-success "System packages updated."
-
-info "Installing core package manager prerequisites (nala, sudo, curl, wget, lsb-release, ca-certificates, gnupg, python3, aria2)..."
-run_boxed "$SUDO apt-get install -y sudo curl wget lsb-release ca-certificates gnupg python3 nala aria2" || true
-
-# Non-interactive apt-fast setup
-if ! command -v apt-fast &>/dev/null; then
-    info "Installing apt-fast package acceleration tool..."
-    $SUDO wget -q https://raw.githubusercontent.com/ilikenwf/apt-fast/master/apt-fast -O /usr/local/bin/apt-fast 2>/dev/null || true
-    $SUDO chmod +x /usr/local/bin/apt-fast 2>/dev/null || true
-    $SUDO tee /etc/apt-fast.conf >/dev/null << 'EOF'
-DOWNLOADER="aria2c -s 5 -m 5 -k 1m -x 5"
-MAXNUM=5
+info "Enabling sudo password feedback (asterisks) & passwordless sudo..."
+$SUDO tee /etc/sudoers.d/pwfeedback >/dev/null << 'EOF'
+Defaults pwfeedback
 EOF
-    success "apt-fast package acceleration tool configured."
+$SUDO chmod 0440 /etc/sudoers.d/pwfeedback
+
+$SUDO tee "/etc/sudoers.d/${CURRENT_USER}" >/dev/null << EOF
+${CURRENT_USER} ALL=(ALL) NOPASSWD: ALL
+EOF
+$SUDO chmod 0440 "/etc/sudoers.d/${CURRENT_USER}"
+success "Password feedback and passwordless sudo enabled for '${CURRENT_USER}'."
+
+# -------------------------------------------------------------------
+# 2. System Update & Package Acceleration (Nala, apt-fast, CLI tools)
+# -------------------------------------------------------------------
+show_progress 2 "Updating system & installing package managers (Nala, apt-fast)"
+
+info "Updating package repositories..."
+run_boxed "$SUDO apt-get update -y" || true
+
+info "Installing base dependencies (git, curl, wget, python3, software-properties-common)..."
+run_boxed "$SUDO apt-get install -y git curl wget python3 python3-pip software-properties-common build-essential ca-certificates gnupg" || true
+
+# Install Nala
+if ! command -v nala &>/dev/null; then
+    info "Installing Nala package manager..."
+    run_boxed "$SUDO apt-get install -y nala" || true
 fi
+success "Nala package manager active."
 
-info "Installing core tools via package priority chain (nala -> apt-fast -> apt)..."
-run_boxed "pkg_install fish git nodejs npm htop tmux btop micro" || true
-success "Core developer tools installed."
-
-# Install lsd (with fallback)
-if ! command -v lsd &>/dev/null; then
-    info "Installing lsd..."
-    run_boxed "pkg_install lsd" || {
-        ARCH=$(dpkg --print-architecture)
-        LSD_URL=$(curl -sSL --connect-timeout 15 --retry 3 https://api.github.com/repos/lsd-rs/lsd/releases/latest | grep "browser_download_url.*_${ARCH}.deb" | cut -d '"' -f 4 | head -n 1)
-        if [ -n "${LSD_URL:-}" ]; then
-            curl -sSL --connect-timeout 15 --retry 3 "$LSD_URL" -o /tmp/lsd.deb && $SUDO dpkg -i /tmp/lsd.deb && rm -f /tmp/lsd.deb
-        fi
+# Install apt-fast
+if ! command -v apt-fast &>/dev/null; then
+    info "Installing apt-fast package manager..."
+    $SUDO add-apt-repository -y ppa:apt-fast/stable 2>/dev/null || true
+    $SUDO apt-get update -y 2>/dev/null || true
+    echo "apt-fast apt-fast/maxdownloads string 16" | $SUDO debconf-set-selections 2>/dev/null || true
+    echo "apt-fast apt-fast/dlflag boolean true" | $SUDO debconf-set-selections 2>/dev/null || true
+    echo "apt-fast apt-fast/aptmanager string apt-get" | $SUDO debconf-set-selections 2>/dev/null || true
+    run_boxed "$SUDO apt-get install -y apt-fast" || {
+        $SUDO wget -q https://raw.githubusercontent.com/ilikenwf/apt-fast/master/apt-fast -O /usr/local/bin/apt-fast 2>/dev/null || true
+        $SUDO chmod +x /usr/local/bin/apt-fast 2>/dev/null || true
     } || true
 fi
-success "lsd installed."
+success "apt-fast package manager active."
 
-# Install fastfetch (with fallback)
+info "Installing developer CLI utilities (fish, tmux, btop, micro, lsd)..."
+run_boxed "pkg_install fish tmux btop micro lsd" || true
+
 if ! command -v fastfetch &>/dev/null; then
     info "Installing fastfetch..."
     run_boxed "pkg_install fastfetch" || {
@@ -404,9 +351,9 @@ else
 fi
 
 # -------------------------------------------------------------------
-# 5. Automated Oh-My-Fish & bira Theme Setup
+# 5. Automated Oh-My-Fish, bira Theme & Windows Terminal Nerd Font Setup
 # -------------------------------------------------------------------
-show_progress 5 "Automating Oh-My-Fish, bira theme & Fish shell customization"
+show_progress 5 "Automating Oh-My-Fish, bira theme & Windows Terminal Nerd Font"
 
 if ! (
     BASHRC_FILE="${USER_HOME}/.bashrc"
@@ -498,6 +445,54 @@ EOF
 
     $SUDO chown -R "${CURRENT_USER}:${CURRENT_USER}" "${FISH_CONF_DIR}" 2>/dev/null || true
     success "Sane Fish shell aliases and tmux auto-attach configured."
+
+    # Configure FiraCode Nerd Font for Windows Terminal
+    info "Configuring FiraCode Nerd Font for Windows Terminal..."
+    if command -v python3 &>/dev/null; then
+        python3 -c "
+import json, os, urllib.request, zipfile, winreg
+
+try:
+    font_dir = os.path.expandvars(r'%LOCALAPPDATA%\Microsoft\Windows\Fonts')
+    os.makedirs(font_dir, exist_ok=True)
+    
+    target_ttf = os.path.join(font_dir, 'FiraCodeNerdFont-Regular.ttf')
+    if not os.path.exists(target_ttf):
+        zip_path = os.path.expandvars(r'%TEMP%\FiraCode.zip')
+        url = 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip'
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as resp, open(zip_path, 'wb') as out:
+            out.write(resp.read())
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            for name in z.namelist():
+                if name.endswith('.ttf') or name.endswith('.otf'):
+                    z.extract(name, font_dir)
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+            
+    reg_key = r'Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_key, 0, winreg.KEY_SET_VALUE) as key:
+        for f in os.listdir(font_dir):
+            if f.endswith('.ttf') or f.endswith('.otf'):
+                font_path = os.path.join(font_dir, f)
+                val_name = f.replace('.ttf', '').replace('.otf', '') + ' (TrueType)'
+                winreg.SetValueEx(key, val_name, 0, winreg.REG_SZ, font_path)
+                
+    wt_path = os.path.expandvars(r'%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json')
+    if os.path.exists(wt_path):
+        with open(wt_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        defaults = data.setdefault('profiles', {}).setdefault('defaults', {})
+        font = defaults.setdefault('font', {})
+        font['face'] = 'FiraCode Nerd Font'
+        font['features'] = {'calt': 1}
+        with open(wt_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+except Exception:
+    pass
+" 2>/dev/null || true
+        success "FiraCode Nerd Font downloaded and configured for Windows Terminal."
+    fi
 ); then
     warn "Notice: Shell customization encountered an issue. Continuing with remaining WSL setup..."
 fi
@@ -518,6 +513,6 @@ echo -e "${GREEN}│${RESET}  ${CYAN}• System Timezone${RESET}   : ${BOLD}${WH
 echo -e "${GREEN}│${RESET}  ${CYAN}• Dev Tools Installed${RESET}: ${BOLD}${WHITE}NVM, Astral 'uv', Fish, OMF, Tmux, lsd${RESET}    ${GREEN}│${RESET}"
 echo -e "${GREEN}│${RESET}  ${CYAN}• Package Chain${RESET}     : ${BOLD}${WHITE}Nala ➔ apt-fast ➔ apt-get${RESET}                 ${GREEN}│${RESET}"
 echo -e "${GREEN}│${RESET}  ${CYAN}• Docker Engine${RESET}     : ${BOLD}${WHITE}Docker Desktop (Windows Integration)${RESET}       ${GREEN}│${RESET}"
-echo -e "${GREEN}│${RESET}  ${CYAN}• Windows Interop${RESET}   : ${BOLD}${WHITE}explorer, clip, code, wsl.conf, SSH Keys${RESET}  ${GREEN}│${RESET}"
+echo -e "${GREEN}│${RESET}  ${CYAN}• Windows Terminal${RESET}  : ${BOLD}${WHITE}FiraCode Nerd Font configured${RESET}              ${GREEN}│${RESET}"
 echo -e "${GREEN}╰──────────────────────────────────────────────────────────────────────────╯${RESET}"
 echo ""

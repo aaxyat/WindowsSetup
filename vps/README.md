@@ -8,7 +8,7 @@ Automated shell scripts for initializing and managing Oracle Cloud VPS instances
 To configure your local Ubuntu WSL environment in a single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/wslsetup.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/vps/wslsetup.sh | sudo bash
 # Run automated self-test suite:
 bash wslsetup.sh --test
 ```
@@ -19,7 +19,7 @@ bash wslsetup.sh --test
 To install Apache2 + PHP + MariaDB + phpMyAdmin with `/home/aaxyat/projects/php` DocumentRoot, `newsite` CLI manager, and wildcard `*.local` Virtual Hosts:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/wsldev.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/vps/wsldev.sh | sudo bash
 # OR run locally inside WSL:
 bash wsldev.sh
 ```
@@ -30,7 +30,7 @@ bash wsldev.sh
 Once your VPS reboots, SSH in as `root` and run `setup.sh`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/setup.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/vps/setup.sh | sudo bash
 # OR run locally:
 bash setup.sh
 ```
@@ -41,7 +41,7 @@ bash setup.sh
 To reset your Oracle VPS back to a clean Debian 13 OS using `debi.sh`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/master/vps/reset.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/aaxyat/WindowsSetup/main/vps/reset.sh | sudo bash
 # OR run locally:
 bash reset.sh
 ```
